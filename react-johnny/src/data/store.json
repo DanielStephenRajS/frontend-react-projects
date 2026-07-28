@@ -1,0 +1,19 @@
+{
+  "storeName": "Johnny Fishing Tackle",
+  "domain": "johnnyfishingtackles.com",
+  "logoUrl": "/assets/logo-placeholder.png",
+  "phone": "+91 86675 68243",
+  "addressLines": [
+    "11/3, 1st Floor,",
+    "11 Redhills Main Road,",
+    "Ram Nagar,",
+    "Ambattur,",
+    "Chennai,",
+    "Tamil Nadu 600053,",
+    "India"
+  ],
+  "businessHours": [
+    "Monday - Saturday: 11:00 AM - 8:00 PM",
+    "Sunday: 9:00 AM - 2:00 PM"
+  ]
+}

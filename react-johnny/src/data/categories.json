@@ -1,0 +1,72 @@
+[
+  {
+    "id": "cat-rods",
+    "name": "Rods",
+    "slug": "rods",
+    "description": "Spinning and casting rods for every fishing style.",
+    "image": "/assets/categories/rods.jpg"
+  },
+  {
+    "id": "cat-reels",
+    "name": "Reels",
+    "slug": "reels",
+    "description": "Performance reels with smooth drag and control.",
+    "image": "/assets/categories/reels.jpg"
+  },
+  {
+    "id": "cat-lures",
+    "name": "Lures",
+    "slug": "lures",
+    "description": "Topwater, crank, and soft bait lure options.",
+    "image": "/assets/categories/lures.jpg"
+  },
+  {
+    "id": "cat-accessories",
+    "name": "Accessories",
+    "slug": "accessories",
+    "description": "Daily utility tools and add-ons for anglers.",
+    "image": "/assets/categories/accessories.jpg"
+  },
+  {
+    "id": "cat-terminal-tackle",
+    "name": "Terminal Tackle",
+    "slug": "terminal-tackle",
+    "description": "Hooks, swivels, sinkers, and essentials.",
+    "image": "/assets/categories/terminal-tackle.jpg"
+  },
+  {
+    "id": "cat-frog-lures",
+    "name": "Frog Lures",
+    "slug": "frog-lures",
+    "description": "Weedless frog lures built for topwater bites.",
+    "image": "/assets/categories/frog-lures.jpg"
+  },
+  {
+    "id": "cat-freshwater-lures",
+    "name": "Freshwater Lures",
+    "slug": "freshwater-lures",
+    "description": "Lures tuned for river, lake, and pond use.",
+    "image": "/assets/categories/freshwater-lures.jpg"
+  },
+  {
+    "id": "cat-saltwater-lures",
+    "name": "Saltwater Lures",
+    "slug": "saltwater-lures",
+    "description": "Corrosion-resistant lures for coastal fishing.",
+    "image": "/assets/categories/saltwater-lures.jpg"
+  },
+  {
+    "id": "cat-fishing-nets",
+    "name": "Fishing Nets",
+    "slug": "fishing-nets",
+    "description": "Landing nets for boat, shore, and kayak use.",
+    "image": "/assets/categories/fishing-nets.jpg"
+  },
+  {
+    "id": "cat-t-shirts",
+    "name": "T-Shirts",
+    "slug": "t-shirts",
+    "description": "Comfortable fishing wear for on and off water.",
+    "image": "/assets/categories/t-shirts.jpg"
+  }
+]

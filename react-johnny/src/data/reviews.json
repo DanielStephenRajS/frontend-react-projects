@@ -1,0 +1,23 @@
+[
+  {
+    "id": "review-1",
+    "name": "Arun K.",
+    "rating": 5,
+    "comment": "Great collection of rods and very helpful staff recommendations.",
+    "avatar": "/assets/reviews/reviewer-1.jpg"
+  },
+  {
+    "id": "review-2",
+    "name": "Priya M.",
+    "rating": 4,
+    "comment": "Good value lure sets. Looking forward to more saltwater stock.",
+    "avatar": "/assets/reviews/reviewer-2.jpg"
+  },
+  {
+    "id": "review-3",
+    "name": "Vignesh R.",
+    "rating": 5,
+    "comment": "Fast support and quality reels. Highly recommended.",
+    "avatar": "/assets/reviews/reviewer-3.jpg"
+  }
+]

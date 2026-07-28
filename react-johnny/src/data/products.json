@@ -1,0 +1,286 @@
+[
+  {
+    "id": "prod-rod-1",
+    "name": "Lucana Coastal Pro Spin Rod",
+    "slug": "lucana-coastal-pro-spin-rod",
+    "description": "A sensitive medium-fast spinning rod built for estuary and nearshore fishing sessions.",
+    "shortDescription": "Balanced spinning rod for long casting sessions.",
+    "brand": "Lucana",
+    "brandSlug": "lucana",
+    "category": "Rods",
+    "categorySlug": "rods",
+    "price": 7499,
+    "images": [
+      "/assets/products/rod-1-a.jpg",
+      "/assets/products/rod-1-b.jpg",
+      "/assets/products/rod-1-c.jpg"
+    ],
+    "featured": true,
+    "specifications": {
+      "Rod Length": "7'2\"",
+      "Rod Action": "Medium Fast",
+      "Rod Power": "Medium",
+      "Rod Weight": "148 g",
+      "Material": "30T Carbon Blank"
+    }
+  },
+  {
+    "id": "prod-rod-2",
+    "name": "Tackleman RiverFlex Casting Rod",
+    "slug": "tackleman-riverflex-casting-rod",
+    "description": "Compact casting rod for freshwater predator fishing and accurate lure placement.",
+    "shortDescription": "Accurate casting rod with crisp backbone.",
+    "brand": "Tackleman",
+    "brandSlug": "tackleman",
+    "category": "Rods",
+    "categorySlug": "rods",
+    "price": 6299,
+    "images": [
+      "/assets/products/rod-2-a.jpg",
+      "/assets/products/rod-2-b.jpg"
+    ],
+    "featured": false,
+    "specifications": {
+      "Rod Length": "6'8\"",
+      "Rod Action": "Fast",
+      "Rod Power": "Medium Heavy",
+      "Rod Weight": "156 g",
+      "Material": "Graphite Composite"
+    }
+  },
+  {
+    "id": "prod-reel-1",
+    "name": "Lucana Surge 3000 Spinning Reel",
+    "slug": "lucana-surge-3000-spinning-reel",
+    "description": "Smooth and corrosion-resistant spinning reel tuned for inshore applications.",
+    "shortDescription": "Inshore-ready spinning reel with smooth drag.",
+    "brand": "Lucana",
+    "brandSlug": "lucana",
+    "category": "Reels",
+    "categorySlug": "reels",
+    "price": 5899,
+    "images": [
+      "/assets/products/reel-1-a.jpg",
+      "/assets/products/reel-1-b.jpg",
+      "/assets/products/reel-1-c.jpg"
+    ],
+    "featured": true,
+    "specifications": {
+      "Gear Ratio": "6.2:1",
+      "Bearings": "7+1",
+      "Weight": "238 g",
+      "Drag": "9 kg",
+      "Line Capacity": "0.28 mm / 180 m"
+    }
+  },
+  {
+    "id": "prod-reel-2",
+    "name": "Tackleman Torrent Baitcaster",
+    "slug": "tackleman-torrent-baitcaster",
+    "description": "Low-profile baitcaster with stable spool control and reliable braking.",
+    "shortDescription": "Compact baitcaster for precise lure control.",
+    "brand": "Tackleman",
+    "brandSlug": "tackleman",
+    "category": "Reels",
+    "categorySlug": "reels",
+    "price": 6999,
+    "images": [
+      "/assets/products/reel-2-a.jpg",
+      "/assets/products/reel-2-b.jpg"
+    ],
+    "featured": false,
+    "specifications": {
+      "Gear Ratio": "7.1:1",
+      "Bearings": "8+1",
+      "Weight": "215 g",
+      "Drag": "7.5 kg",
+      "Line Capacity": "0.30 mm / 120 m"
+    }
+  },
+  {
+    "id": "prod-lure-1",
+    "name": "Lucana Flash Minnow 95",
+    "slug": "lucana-flash-minnow-95",
+    "description": "Suspending jerkbait designed for aggressive reaction strikes.",
+    "shortDescription": "Suspending minnow lure for twitch retrieves.",
+    "brand": "Lucana",
+    "brandSlug": "lucana",
+    "category": "Lures",
+    "categorySlug": "lures",
+    "price": 899,
+    "images": [
+      "/assets/products/lure-1-a.jpg",
+      "/assets/products/lure-1-b.jpg"
+    ],
+    "featured": true,
+    "specifications": {
+      "Type": "Suspending Minnow",
+      "Length": "95 mm",
+      "Weight": "11 g",
+      "Depth": "1.0 - 1.5 m",
+      "Hooks": "#6 Treble"
+    }
+  },
+  {
+    "id": "prod-lure-2",
+    "name": "Tackleman Top Frog X",
+    "slug": "tackleman-top-frog-x",
+    "description": "Soft hollow frog lure engineered for heavy vegetation cover.",
+    "shortDescription": "Weedless frog lure for topwater blowups.",
+    "brand": "Tackleman",
+    "brandSlug": "tackleman",
+    "category": "Frog Lures",
+    "categorySlug": "frog-lures",
+    "price": 649,
+    "images": [
+      "/assets/products/lure-2-a.jpg",
+      "/assets/products/lure-2-b.jpg"
+    ],
+    "featured": false,
+    "specifications": {
+      "Type": "Hollow Body Frog",
+      "Length": "60 mm",
+      "Weight": "13 g",
+      "Hook": "Double Frog Hook",
+      "Best Use": "Heavy cover topwater"
+    }
+  },
+  {
+    "id": "prod-fresh-1",
+    "name": "Lucana Stream Pulse Spinner",
+    "slug": "lucana-stream-pulse-spinner",
+    "description": "Flash-heavy inline spinner tuned for freshwater species.",
+    "shortDescription": "Inline spinner for freshwater chase bites.",
+    "brand": "Lucana",
+    "brandSlug": "lucana",
+    "category": "Freshwater Lures",
+    "categorySlug": "freshwater-lures",
+    "price": 499,
+    "images": [
+      "/assets/products/fresh-1-a.jpg"
+    ],
+    "featured": false,
+    "specifications": {
+      "Type": "Inline Spinner",
+      "Weight": "8 g",
+      "Blade": "Willow",
+      "Target": "Bass / Snakehead",
+      "Finish": "Nickel Gold"
+    }
+  },
+  {
+    "id": "prod-salt-1",
+    "name": "Tackleman Salt Dart Jig",
+    "slug": "tackleman-salt-dart-jig",
+    "description": "Saltwater casting jig for shoreline and light boat jigging.",
+    "shortDescription": "Corrosion-resistant casting jig for saltwater.",
+    "brand": "Tackleman",
+    "brandSlug": "tackleman",
+    "category": "Saltwater Lures",
+    "categorySlug": "saltwater-lures",
+    "price": 799,
+    "images": [
+      "/assets/products/salt-1-a.jpg"
+    ],
+    "featured": false,
+    "specifications": {
+      "Type": "Casting Jig",
+      "Weight": "30 g",
+      "Assist Hook": "Single Assist",
+      "Coating": "Salt Shield",
+      "Target": "Trevally / Seabass"
+    }
+  },
+  {
+    "id": "prod-accessory-1",
+    "name": "Lucana Angler Utility Pack",
+    "slug": "lucana-angler-utility-pack",
+    "description": "Organizer pouch for line, leaders, swivels, and pliers.",
+    "shortDescription": "Compact utility pouch for quick sessions.",
+    "brand": "Lucana",
+    "brandSlug": "lucana",
+    "category": "Accessories",
+    "categorySlug": "accessories",
+    "price": 1299,
+    "images": [
+      "/assets/products/accessory-1-a.jpg"
+    ],
+    "featured": true,
+    "specifications": {
+      "Material": "Water-resistant Nylon",
+      "Compartments": "5",
+      "Dimensions": "24 x 16 x 9 cm",
+      "Closure": "Dual Zip",
+      "Weight": "320 g"
+    }
+  },
+  {
+    "id": "prod-terminal-1",
+    "name": "Tackleman Terminal Kit Pro",
+    "slug": "tackleman-terminal-kit-pro",
+    "description": "Comprehensive terminal tackle set with hooks, swivels, and sinkers.",
+    "shortDescription": "All-in-one terminal tackle assortment.",
+    "brand": "Tackleman",
+    "brandSlug": "tackleman",
+    "category": "Terminal Tackle",
+    "categorySlug": "terminal-tackle",
+    "price": 1599,
+    "images": [
+      "/assets/products/terminal-1-a.jpg"
+    ],
+    "featured": false,
+    "specifications": {
+      "Hook Sizes": "1/0 to 4/0",
+      "Swivels": "Rolling and Barrel",
+      "Sinkers": "Split and Bullet",
+      "Pieces": "120",
+      "Box": "Compartment Organizer"
+    }
+  },
+  {
+    "id": "prod-net-1",
+    "name": "Lucana Carbon Landing Net",
+    "slug": "lucana-carbon-landing-net",
+    "description": "Lightweight folding landing net with fish-safe mesh.",
+    "shortDescription": "Folding landing net with soft mesh bag.",
+    "brand": "Lucana",
+    "brandSlug": "lucana",
+    "category": "Fishing Nets",
+    "categorySlug": "fishing-nets",
+    "price": 2899,
+    "images": [
+      "/assets/products/net-1-a.jpg"
+    ],
+    "featured": false,
+    "specifications": {
+      "Handle Length": "75 cm",
+      "Hoop Size": "45 x 35 cm",
+      "Net Depth": "40 cm",
+      "Frame": "Carbon Composite",
+      "Mesh": "Knotless Rubber"
+    }
+  },
+  {
+    "id": "prod-shirt-1",
+    "name": "Tackleman Drift Performance Tee",
+    "slug": "tackleman-drift-performance-tee",
+    "description": "Moisture-wicking performance T-shirt for hot weather fishing.",
+    "shortDescription": "Breathable tee built for long outdoor sessions.",
+    "brand": "Tackleman",
+    "brandSlug": "tackleman",
+    "category": "T-Shirts",
+    "categorySlug": "t-shirts",
+    "price": 999,
+    "images": [
+      "/assets/products/shirt-1-a.jpg"
+    ],
+    "featured": false,
+    "specifications": {
+      "Fabric": "Polyester Blend",
+      "Fit": "Athletic",
+      "UV Protection": "UPF 30+",
+      "Sizes": "S to XXL",
+      "Care": "Machine Wash"
+    }
+  }
+]

@@ -1,0 +1,118 @@
+[
+  {
+    "id": "brand-lucana",
+    "name": "Lucana",
+    "slug": "lucana",
+    "description": "Trusted fishing tackle brand for rods, reels, lures, lines, and accessories across freshwater and saltwater angling.",
+    "logo": "/assets/brands/lucana-logo.jpg",
+    "bannerImage": "https://share.google/TxDJUpJ7h325LHrVh",
+    "bannerFallbackImage": "/assets/brands/lucana-banner.jpg",
+    "intro": "Lucana is positioned as a reliable performance brand with tackle options for beginners, enthusiasts, and tournament anglers.",
+    "history": "Lucana has grown through practical product innovation for local and regional fishing conditions, with a strong focus on durability and angler confidence.",
+    "categories": [
+      "Rods",
+      "Reels",
+      "Lures",
+      "Lines",
+      "Accessories"
+    ],
+    "websiteUrl": "https://johnnyfishingtackles.com",
+    "featuredProductIds": [
+      "prod-rod-1",
+      "prod-reel-1",
+      "prod-lure-1"
+    ]
+  },
+  {
+    "id": "brand-tackleman",
+    "name": "Tackleman",
+    "slug": "tackleman",
+    "description": "Versatile fishing equipment range offering strong value and dependable performance across lure, reel, rod, and terminal setups.",
+    "logo": "/assets/brands/tackleman-logo.jpg",
+    "bannerImage": "/assets/brands/tackleman-banner.jpg",
+    "intro": "Tackleman delivers adaptable products for day-to-day angling needs across freshwater and coastal fishing styles.",
+    "history": "Tackleman products are selected for consistent field performance and easy serviceability, making them ideal for both retail and wholesale demand.",
+    "categories": [
+      "Rods",
+      "Reels",
+      "Lures",
+      "Terminal Tackle",
+      "Accessories"
+    ],
+    "websiteUrl": "https://johnnyfishingtackles.com",
+    "featuredProductIds": [
+      "prod-rod-2",
+      "prod-reel-2",
+      "prod-terminal-1"
+    ]
+  },
+  {
+    "id": "brand-daiwa",
+    "name": "Daiwa",
+    "slug": "daiwa",
+    "description": "Daiwa is one of the world's leading fishing tackle manufacturers, founded in Japan and known for premium innovation.",
+    "logo": "/assets/brands/diawa-logo.png",
+    "bannerImage": "/assets/brands/diawa-banner.jpg",
+    "intro": "Global innovation leader in high-performance fishing gear trusted by anglers worldwide.",
+    "history": "Daiwa is one of the world's leading fishing tackle manufacturers, founded in Japan. The company is known for innovation, premium-quality rods, reels, lures, and advanced fishing technologies used by anglers worldwide.",
+    "categories": [
+      "Rods",
+      "Reels",
+      "Lures",
+      "Lines",
+      "Accessories"
+    ],
+    "websiteUrl": "https://www.daiwa.com"
+  },
+  {
+    "id": "brand-bravo",
+    "name": "Bravo",
+    "slug": "bravo",
+    "description": "Quality-focused tackle lineup designed for durability, balanced action, and dependable angling results.",
+    "logo": "/assets/brands/bravo-logo.jpg",
+    "bannerImage": "/assets/brands/bravo-banner.png",
+    "intro": "Bravo provides practical tackle options suited for regular anglers and developing sport-fishing markets.",
+    "history": "Bravo products are positioned as robust and user-friendly for anglers looking for reliable rods, lures, and accessories.",
+    "categories": [
+      "Rods",
+      "Reels",
+      "Lures",
+      "Accessories"
+    ],
+    "websiteUrl": "https://johnnyfishingtackles.com"
+  },
+  {
+    "id": "brand-firefox",
+    "name": "FireFox",
+    "slug": "firefox",
+    "description": "Performance-oriented tackle brand focused on casting confidence, lure control, and consistent fishing output.",
+    "logo": "/assets/brands/firefox-logo.png",
+    "bannerImage": "/assets/brands/firefox-banner.png",
+    "intro": "FireFox combines modern tackle styling with practical utility for active freshwater and inshore anglers.",
+    "history": "FireFox products are curated for anglers who prioritize responsive gear and value-driven performance in varied fishing conditions.",
+    "categories": [
+      "Rods",
+      "Lures",
+      "Lines",
+      "Accessories"
+    ],
+    "websiteUrl": "https://johnnyfishingtackles.com"
+  },
+  {
+    "id": "brand-pioneer",
+    "name": "Pioneer",
+    "slug": "pioneer",
+    "description": "Pioneer offers fishing tackle, rods, reels, accessories, and angling equipment for versatile fishing techniques.",
+    "logo": "/assets/brands/pioneer-logo.jpg",
+    "bannerImage": "/assets/brands/poineer-banner.jpg",
+    "intro": "Pioneer emphasizes broad tackle coverage with a practical mix of gear for recreational and serious anglers.",
+    "history": "Pioneer is recognized for covering essential angling categories with dependable products tailored for multiple species and fishing styles.",
+    "categories": [
+      "Rods",
+      "Reels",
+      "Accessories",
+      "Angling Equipment"
+    ],
+    "websiteUrl": "https://www.pioneertackle.com/"
+  }
+]
