@@ -1,21 +1,26 @@
 import { type ChangeEvent, type FormEvent, useMemo, useState } from "react";
-import { addAdminProduct, AdminStorageQuotaError } from "../data/admin-products";
+import { useLocation, useNavigate } from "react-router-dom";
+import { addAdminProduct, AdminStorageQuotaError, createProduct, updateAdminProduct, updateProduct } from "../data/admin-products";
 import { catalogRepository } from "../data/catalog";
 import { useAdmin } from "../hooks/useAdmin";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
-
-const slugify = (value: string): string =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+import { useProducts } from "../hooks/useProducts";
 
 const MAX_UPLOAD_IMAGES = 5;
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
 const MAX_IMAGE_DIMENSION = 1280;
 const COMPRESS_QUALITY = 0.72;
+
+const buildImageFileName = (productName: string, index: number, extension: string): string => {
+  const baseName = (productName || "product")
+    .trim()
+    .replace(/[<>:"/\\|?*]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const finalBase = baseName || "product";
+  return `${finalBase}_${index}${extension}`;
+};
 
 const optimizeImageForStorage = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -58,23 +63,60 @@ const optimizeImageForStorage = (file: File): Promise<string> =>
 export const AdminPage = () => {
   useDocumentMeta("Admin", "Admin product management for Johnny Fishing Tackle.");
 
+  const location = useLocation();
+  const navigate = useNavigate();
   const { logout } = useAdmin();
   const categories = catalogRepository.getCategories();
   const brands = catalogRepository.getBrands();
-  const products = catalogRepository.getProducts();
+  const [refreshTick, setRefreshTick] = useState(0);
+  const { products } = useProducts(refreshTick);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
   const [categorySlug, setCategorySlug] = useState(categories[0]?.slug ?? "rods");
   const [brandSlug, setBrandSlug] = useState(brands[0]?.slug ?? "lucana");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<Array<{ name: string; dataUrl: string }>>([]);
+  const [imageUrlsInput, setImageUrlsInput] = useState("");
   const [keyFeaturesInput, setKeyFeaturesInput] = useState("");
-  const [specInput, setSpecInput] = useState("Length: 7'\nAction: Medium Fast");
+  const [specInput, setSpecInput] = useState("");
   const [featured, setFeatured] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+
+  const editingProduct = (location.state as { editingProduct?: (typeof products)[number] } | null)?.editingProduct ?? null;
+
+  useMemo(() => {
+    if (!editingProduct) {
+      return;
+    }
+
+    const specLines = Object.entries(editingProduct.specifications ?? {})
+      .map(([key, value]) => `${key}: ${value}`)
+      .join("\n");
+
+    setName(editingProduct.name);
+    setDescription(editingProduct.description);
+    setBrandSlug(editingProduct.brandSlug || brands[0]?.slug || "lucana");
+    setCategorySlug(editingProduct.categorySlug || categories[0]?.slug || "rods");
+    setPrice(String(editingProduct.price));
+    setQuantity(editingProduct.quantity != null ? String(editingProduct.quantity) : "");
+    setUploadedImages(
+      (editingProduct.images ?? [])
+        .filter((image) => image.startsWith("data:") || image.startsWith("http"))
+        .map((image, index) => ({
+          name: buildImageFileName(editingProduct.name, index + 1, ".jpg"),
+          dataUrl: image,
+        })) ?? [],
+    );
+    setImageUrlsInput(editingProduct.images?.filter((image) => image.startsWith("http")).join("\n") ?? "");
+    setKeyFeaturesInput(editingProduct.keyFeatures?.join("; ") ?? "");
+    setSpecInput(specLines || "");
+    setFeatured(Boolean(editingProduct.featured));
+    setEditingProductId(editingProduct.id);
+    setMessage(`Editing ${editingProduct.name}. Update the fields and save.`);
+  }, [brands, categories, editingProduct]);
 
   const brand = useMemo(() => brands.find((item) => item.slug === brandSlug), [brands, brandSlug]);
   const category = useMemo(() => categories.find((item) => item.slug === categorySlug), [categories, categorySlug]);
@@ -103,13 +145,18 @@ export const AdminPage = () => {
     const filesToRead = files.slice(0, availableSlots);
 
     try {
-      const dataUrls = await Promise.all(filesToRead.map((file) => optimizeImageForStorage(file)));
-      setUploadedImages((current) => [...current, ...dataUrls]);
+      const imageEntries = await Promise.all(
+        filesToRead.map(async (file) => ({
+          name: file.name,
+          dataUrl: await optimizeImageForStorage(file),
+        })),
+      );
+      setUploadedImages((current) => [...current, ...imageEntries]);
 
       if (files.length > availableSlots) {
         setMessage(`Only ${MAX_UPLOAD_IMAGES} images can be uploaded. Extra files were skipped.`);
       } else {
-        setMessage(`${dataUrls.length} image(s) uploaded and optimized for storage.`);
+        setMessage(`${imageEntries.length} image(s) uploaded and optimized for storage.`);
       }
     } catch {
       setMessage("Failed to upload one or more images. Please try again.");
@@ -122,7 +169,22 @@ export const AdminPage = () => {
     setUploadedImages((current) => current.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setPrice("");
+    setQuantity("");
+    setUploadedImages([]);
+    setImageUrlsInput("");
+    setKeyFeaturesInput("");
+    setSpecInput("");
+    setFeatured(false);
+    setBrandSlug(brands[0]?.slug ?? "lucana");
+    setCategorySlug(categories[0]?.slug ?? "rods");
+    setEditingProductId(null);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const parsedPrice = Number(price);
@@ -157,30 +219,103 @@ export const AdminPage = () => {
       }, {});
 
     const keyFeatures = keyFeaturesInput
-      .split(",")
+      .split(";")
       .map((item) => item.trim())
+      .filter(Boolean)
+      .join("; ");
+
+    const imageUrls = imageUrlsInput
+      .split("\n")
+      .map((line) => line.trim())
       .filter(Boolean);
 
-    const idSeed = `${slugify(name)}-${Date.now()}`;
+    const allImages = [...uploadedImages.map((image) => image.dataUrl), ...imageUrls].filter(Boolean);
+    const uploadedFiles = await Promise.all(
+      uploadedImages.map(async (image, index) => {
+        const response = await fetch(image.dataUrl);
+        const blob = await response.blob();
+        const extension = blob.type.includes("png") ? ".png" : blob.type.includes("webp") ? ".webp" : ".jpg";
+        return new File([blob], buildImageFileName(name.trim() || "product", index + 1, extension), {
+          type: blob.type || "image/webp",
+        });
+      }),
+    );
+    const idSeed = `${Date.now()}`;
+
+    const productSpecifications = Object.keys(specs).length
+      ? Object.entries(specs)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("; ")
+      : "Feature: Details coming soon";
+
+    const productPayload = {
+      product_name: name.trim(),
+      product_description: description.trim(),
+      brand_name: brand.name,
+      category_name: category.name,
+      price_inr: parsedPrice,
+      key_features: keyFeatures,
+      specifications: productSpecifications,
+      stock_quantity: parsedQuantity,
+      is_featured: featured,
+      is_active: true,
+      images: uploadedFiles.length > 0 ? [...uploadedFiles, ...imageUrls] : allImages.length > 0 ? allImages : ["/assets/products/rod-1-a.jpg"],
+    };
 
     try {
-      addAdminProduct({
-        id: `admin-${idSeed}`,
-        slug: slugify(name),
-        name: name.trim(),
-        description: description.trim(),
-        shortDescription: shortDescription.trim() || description.trim().slice(0, 90),
-        brand: brand.name,
-        brandSlug: brand.slug,
-        category: category.name,
-        categorySlug: category.slug,
-        price: parsedPrice,
-        images: uploadedImages.length > 0 ? uploadedImages : ["/assets/products/rod-1-a.jpg"],
-        featured,
-        specifications: Object.keys(specs).length ? specs : { Feature: "Details coming soon" },
-        keyFeatures,
-        quantity: parsedQuantity,
-      });
+      if (editingProductId) {
+        const updatedProduct: (typeof products)[number] = {
+          id: editingProductId,
+          name: name.trim(),
+          description: description.trim(),
+          shortDescription: "",
+          brand: brand.name,
+          brandSlug: brand.slug,
+          category: category.name,
+          categorySlug: category.slug,
+          price: parsedPrice,
+          images: allImages.length > 0 ? allImages : ["/assets/products/rod-1-a.jpg"],
+          featured,
+          specifications: Object.keys(specs).length ? specs : { Feature: "Details coming soon" },
+          keyFeatures: keyFeatures ? keyFeatures.split(";").map((item) => item.trim()).filter(Boolean) : [],
+          quantity: parsedQuantity,
+        };
+
+        if (editingProductId.startsWith("admin-")) {
+          updateAdminProduct(updatedProduct);
+        } else {
+          await updateProduct(editingProductId, productPayload);
+        }
+
+        setMessage("Product updated successfully.");
+      } else {
+        const createdProduct = await createProduct(productPayload);
+        const createdId = String((createdProduct as { product_id?: number | string } | null)?.product_id ?? `admin-${idSeed}`);
+
+        addAdminProduct({
+          id: createdId,
+          name: name.trim(),
+          description: description.trim(),
+          shortDescription: "",
+          brand: brand.name,
+          brandSlug: brand.slug,
+          category: category.name,
+          categorySlug: category.slug,
+          price: parsedPrice,
+          images: allImages.length > 0 ? allImages : ["/assets/products/rod-1-a.jpg"],
+          featured,
+          specifications: Object.keys(specs).length ? specs : { Feature: "Details coming soon" },
+          keyFeatures: keyFeatures ? keyFeatures.split(";").map((item) => item.trim()).filter(Boolean) : [],
+          quantity: parsedQuantity,
+        });
+
+        setMessage("Product added successfully. It is now visible in categories/products.");
+      }
+
+      setRefreshTick((value) => value + 1);
+      if (!editingProductId) {
+        resetForm();
+      }
     } catch (error) {
       if (error instanceof AdminStorageQuotaError) {
         setMessage(
@@ -189,20 +324,9 @@ export const AdminPage = () => {
         return;
       }
 
-      setMessage("Failed to save product. Please retry.");
+      setMessage(error instanceof Error ? `Failed to save product: ${error.message}` : "Failed to save product. Please retry.");
       return;
     }
-
-    setMessage("Product added successfully. It is now visible in categories/products.");
-    setName("");
-    setDescription("");
-    setShortDescription("");
-    setPrice("");
-    setQuantity("");
-    setUploadedImages([]);
-    setKeyFeaturesInput("");
-    setSpecInput("Length: 7'\nAction: Medium Fast");
-    setFeatured(false);
   };
 
   return (
@@ -212,12 +336,22 @@ export const AdminPage = () => {
           <h1 className="font-display text-3xl text-slate-900">Admin Product Manager</h1>
           <p className="mt-1 text-sm text-slate-600">Add rods, reels, lures, and more. New items appear automatically in the catalog.</p>
         </div>
-        <button onClick={logout} className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+        <button
+          onClick={() => {
+            logout();
+            navigate("/");
+          }}
+          className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
           Logout
         </button>
       </section>
 
       <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-2">
+        <div className="lg:col-span-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+          API input hint: use key features separated by semicolon (;), specifications as one key:value per line, and add image URLs one per line when available.
+        </div>
+
         <label className="text-sm font-medium text-slate-700">
           Product Name
           <input value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
@@ -241,8 +375,8 @@ export const AdminPage = () => {
           <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg border border-slate-200 p-2">
             {uploadedImages.length > 0 ? (
               uploadedImages.map((image, index) => (
-                <div key={`${image.slice(0, 20)}-${index}`} className="relative">
-                  <img src={image} alt={`Uploaded product ${index + 1}`} className="h-20 w-full rounded-lg object-cover" />
+                <div key={`${image.name}-${index}`} className="relative">
+                  <img src={image.dataUrl} alt={`Uploaded product ${index + 1}`} className="h-20 w-full rounded-lg object-cover" />
                   <button
                     type="button"
                     onClick={() => removeUploadedImage(index)}
@@ -261,11 +395,6 @@ export const AdminPage = () => {
         <label className="text-sm font-medium text-slate-700 lg:col-span-2">
           Description
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={3} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
-        </label>
-
-        <label className="text-sm font-medium text-slate-700 lg:col-span-2">
-          Short Description
-          <input value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder="Optional short summary" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
         </label>
 
         <label className="text-sm font-medium text-slate-700">
@@ -297,18 +426,22 @@ export const AdminPage = () => {
         </label>
 
         <label className="text-sm font-medium text-slate-700 lg:col-span-2">
-          Key Features (comma separated)
+          Key Features (semicolon separated)
           <input
             value={keyFeaturesInput}
             onChange={(e) => setKeyFeaturesInput(e.target.value)}
-            placeholder="Lightweight body, Corrosion resistant, High drag power"
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
           />
         </label>
 
         <label className="text-sm font-medium text-slate-700 lg:col-span-2">
           Specifications (one per line, key:value)
-          <textarea value={specInput} onChange={(e) => setSpecInput(e.target.value)} rows={5} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+          <textarea
+            value={specInput}
+            onChange={(e) => setSpecInput(e.target.value)}
+            rows={5}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
         </label>
 
         <label className="flex items-center gap-2 text-sm font-medium text-slate-700 lg:col-span-2">
@@ -319,15 +452,11 @@ export const AdminPage = () => {
         <div className="lg:col-span-2 flex items-center justify-between gap-3">
           <p className="text-sm text-emerald-700">{message}</p>
           <button type="submit" className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-700">
-            Add Product
+            {editingProductId ? "Update Product" : "Add Product"}
           </button>
         </div>
       </form>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Catalog Snapshot</h2>
-        <p className="mt-1 text-sm text-slate-600">Total products currently available: {products.length}</p>
-      </section>
     </div>
   );
 };

@@ -24,7 +24,6 @@ export interface Brand {
 export interface Product {
   id: string;
   name: string;
-  slug: string;
   description: string;
   shortDescription: string;
   brand: string;

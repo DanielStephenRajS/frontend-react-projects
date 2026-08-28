@@ -5,9 +5,9 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
-import { catalogRepository } from "../data/catalog";
 import type { CartItem, Product } from "../types";
 import { CartContext } from "./cart-context";
+import { useProducts } from "./useProducts";
 
 interface CartState {
   items: CartItem[];
@@ -60,7 +60,7 @@ const reducer = (state: CartState, action: CartAction): CartState => {
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, { items: [] });
-  const products = catalogRepository.getProducts();
+  const { products } = useProducts();
 
   useEffect(() => {
     const raw = localStorage.getItem(CART_STORAGE_KEY);

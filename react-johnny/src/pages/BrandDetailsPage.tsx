@@ -2,11 +2,12 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { ProductCard } from "../components/ProductCard";
 import { catalogRepository } from "../data/catalog";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
+import { useProducts } from "../hooks/useProducts";
 
 export const BrandDetailsPage = () => {
   const { brandSlug } = useParams();
   const brands = catalogRepository.getBrands();
-  const products = catalogRepository.getProducts();
+  const { products } = useProducts();
 
   const brand = brands.find((item) => item.slug === brandSlug);
 

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCart } from "../hooks/useCart";
 import { formatCurrencyINR } from "../utils/format";
+import { normalizeImageUrl } from "../utils/images";
 import type { Product } from "../types";
 
 interface ProductCardProps {
@@ -11,11 +12,13 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const { addToCart } = useCart();
   const outOfStock = typeof product.quantity === "number" && product.quantity <= 0;
 
+  const primaryImage = normalizeImageUrl(product.images[0]);
+
   return (
     <article className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
       <Link to={`/products/${product.id}`} className="block">
         <img
-          src={product.images[0]}
+          src={primaryImage}
           alt={product.name}
           loading="lazy"
           className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"

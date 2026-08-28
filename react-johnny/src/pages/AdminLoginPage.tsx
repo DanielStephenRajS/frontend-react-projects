@@ -16,9 +16,9 @@ export const AdminLoginPage = () => {
     return <Navigate to="/admin" replace />;
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const ok = login(username, password);
+    const ok = await login(username, password);
     if (!ok) {
       setError("Invalid admin credentials.");
       return;
@@ -39,7 +39,6 @@ export const AdminLoginPage = () => {
             value={username}
             onChange={(event) => setUsername(event.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-            placeholder="admin"
             required
           />
         </label>
@@ -51,7 +50,6 @@ export const AdminLoginPage = () => {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-            placeholder="admin123"
             required
           />
         </label>

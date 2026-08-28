@@ -8,6 +8,7 @@ import { StoreHighlights } from "../components/StoreHighlights";
 import { YouTubeSection } from "../components/YouTubeSection";
 import { catalogRepository } from "../data/catalog";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
+import { useProducts } from "../hooks/useProducts";
 
 export const HomePage = () => {
   useDocumentMeta(
@@ -17,13 +18,13 @@ export const HomePage = () => {
 
   const categories = catalogRepository.getCategories();
   const brands = catalogRepository.getBrands();
-  const products = catalogRepository.getProducts();
+  const { products } = useProducts();
   const videos = catalogRepository.getYouTubeVideos();
   const reviews = catalogRepository.getReviews();
 
   return (
     <div className="space-y-10">
-      <HeroBanner image="/assets/hero/fishing-hero.jpg" />
+      <HeroBanner image="https://images.unsplash.com/photo-1583212292454-1fe6229603b7?auto=format&fit=crop&w=1800&q=80" />
 
       <section>
         <div className="mb-4 flex items-end justify-between">

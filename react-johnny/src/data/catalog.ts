@@ -1,6 +1,5 @@
 import brandsData from "./brands.json";
 import categoriesData from "./categories.json";
-import productsData from "./products.json";
 import reviewsData from "./reviews.json";
 import storeData from "./store.json";
 import youtubeData from "./youtube.json";
@@ -18,11 +17,7 @@ import type {
 export const catalogRepository = {
   getCategories: (): Category[] => categoriesData as unknown as Category[],
   getBrands: (): Brand[] => brandsData as unknown as Brand[],
-  getProducts: (): Product[] => {
-    const staticProducts = productsData as unknown as Product[];
-    const adminProducts = getAdminProducts();
-    return [...adminProducts, ...staticProducts];
-  },
+  getProducts: (): Product[] => getAdminProducts(),
   getStore: (): StoreInfo => storeData as unknown as StoreInfo,
   getYouTubeVideos: (): YouTubeVideo[] => youtubeData as unknown as YouTubeVideo[],
   getReviews: (): GoogleReview[] => reviewsData as unknown as GoogleReview[],

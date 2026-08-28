@@ -5,6 +5,7 @@ import { FilterBar } from "../components/FilterBar";
 import { ProductCard } from "../components/ProductCard";
 import { catalogRepository } from "../data/catalog";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
+import { useProducts } from "../hooks/useProducts";
 import { applyProductFilters, defaultFilters } from "../utils/products";
 
 export const ProductsPage = () => {
@@ -13,7 +14,7 @@ export const ProductsPage = () => {
   const brandFromQuery = searchParams.get("brand") ?? "all";
   const categories = catalogRepository.getCategories();
   const brands = catalogRepository.getBrands();
-  const products = catalogRepository.getProducts();
+  const { products } = useProducts();
 
   const [filters, setFilters] = useState({
     ...defaultFilters,
@@ -42,7 +43,7 @@ export const ProductsPage = () => {
           {selectedCategory ? selectedCategory.name : "All Products"}
         </h1>
         <p className="mt-1 text-sm text-slate-600">
-          Search, filter, and sort across all product lines from our static catalog feed.
+          Search, filter, and sort across all product lines from our live catalog feed.
         </p>
       </section>
 

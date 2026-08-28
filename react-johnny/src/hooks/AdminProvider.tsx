@@ -1,31 +1,58 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { AdminContext } from "./admin-context";
 
-const ADMIN_SESSION_KEY = "johnny-fishing-admin-session";
-const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_TOKEN_KEY = "johnny-fishing-admin-token";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem(ADMIN_SESSION_KEY);
-    setIsAdmin(raw === "active");
+    const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+    setIsAdmin(Boolean(token));
   }, []);
 
-  const login = useCallback((username: string, password: string) => {
-    const allowed = username.trim().toLowerCase() === ADMIN_USERNAME && password === ADMIN_PASSWORD;
-    if (!allowed) {
+  const login = useCallback(async (username: string, password: string) => {
+    const trimmedUsername = username.trim();
+
+    if (!trimmedUsername || !password) {
       return false;
     }
 
-    localStorage.setItem(ADMIN_SESSION_KEY, "active");
-    setIsAdmin(true);
-    return true;
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: trimmedUsername,
+          password,
+        }),
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      const token = data?.access_token;
+
+      if (!token) {
+        return false;
+      }
+
+      sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
+      setIsAdmin(true);
+      return true;
+    } catch (error) {
+      console.error("Admin login failed:", error);
+      return false;
+    }
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(ADMIN_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_TOKEN_KEY);
     setIsAdmin(false);
   }, []);
 

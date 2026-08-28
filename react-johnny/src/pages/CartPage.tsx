@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useCart } from "../hooks/useCart";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
 import { formatCurrencyINR } from "../utils/format";
+import { normalizeImageUrl } from "../utils/images";
 
 export const CartPage = () => {
   useDocumentMeta("Cart", "Review products in your Johnny Fishing Tackle shopping cart.");
@@ -33,7 +34,7 @@ export const CartPage = () => {
                 key={product.id}
                 className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[120px_1fr_auto]"
               >
-                <img src={product.images[0]} alt={product.name} className="h-24 w-full rounded-xl object-cover" />
+                <img src={normalizeImageUrl(product.images[0])} alt={product.name} className="h-24 w-full rounded-xl object-cover" />
                 <div>
                   <p className="text-lg font-semibold text-slate-900">{product.name}</p>
                   <p className="text-sm text-slate-600">{product.category}</p>
