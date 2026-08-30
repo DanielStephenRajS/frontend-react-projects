@@ -10,7 +10,7 @@ interface HeaderProps {
 type SocialPlatform = "Facebook" | "Instagram" | "Telegram" | "YouTube" | "WhatsApp" | "Gmail";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  `px-3 py-3 text-sm font-semibold transition ${isActive ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-700 hover:text-slate-900"}`;
+  `whitespace-nowrap px-2 py-2 text-[10px] font-semibold transition sm:px-3 sm:py-3 sm:text-sm ${isActive ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-700 hover:text-slate-900"}`;
 
 export const Header = ({ onOpenCategories }: HeaderProps) => {
   const { itemCount } = useCart();
@@ -140,8 +140,8 @@ export const Header = ({ onOpenCategories }: HeaderProps) => {
       </div>
 
       <div className="border-t border-slate-100 bg-white">
-        <div className="mx-auto w-full max-w-[1400px] px-4 py-2 sm:px-6">
-          <nav className="flex flex-wrap items-center gap-1.5 md:flex md:gap-2">
+        <div className="mx-auto w-full max-w-[1400px] px-2 py-2 sm:px-6">
+          <nav className="flex items-center gap-0.5 overflow-x-auto whitespace-nowrap md:gap-2">
             <NavLink to="/" end className={navClass}>
               Home
             </NavLink>
