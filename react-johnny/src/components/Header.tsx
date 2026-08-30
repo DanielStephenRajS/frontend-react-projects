@@ -10,7 +10,7 @@ interface HeaderProps {
 type SocialPlatform = "Facebook" | "Instagram" | "Telegram" | "YouTube" | "WhatsApp" | "Gmail";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  `whitespace-nowrap px-2 py-2 text-[10px] font-semibold transition sm:px-3 sm:py-3 sm:text-sm ${isActive ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-700 hover:text-slate-900"}`;
+  `whitespace-nowrap px-1.5 py-2 text-[9.5px] font-semibold tracking-tight transition sm:px-3 sm:py-3 sm:text-sm ${isActive ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-700 hover:text-slate-900"}`;
 
 export const Header = ({ onOpenCategories }: HeaderProps) => {
   const { itemCount } = useCart();
@@ -141,12 +141,12 @@ export const Header = ({ onOpenCategories }: HeaderProps) => {
 
       <div className="border-t border-slate-100 bg-white">
         <div className="mx-auto w-full max-w-[1400px] px-2 py-2 sm:px-6">
-          <nav className="flex items-center gap-0.5 overflow-x-auto whitespace-nowrap md:gap-2">
+          <nav className="flex items-center justify-between gap-0.5 overflow-x-auto whitespace-nowrap md:gap-2">
             <NavLink to="/" end className={navClass}>
               Home
             </NavLink>
             <NavLink to="/products" className={navClass}>
-              Categories
+              Shop
             </NavLink>
             <NavLink to="/brands" className={navClass}>
               Brands
@@ -158,7 +158,7 @@ export const Header = ({ onOpenCategories }: HeaderProps) => {
               Contact
             </NavLink>
             <NavLink to="/cart" className={navClass}>
-              Cart ({itemCount})
+              Cart {itemCount > 0 ? `(${itemCount})` : ""}
             </NavLink>
             {isAdmin ? (
               <NavLink to="/admin" className={navClass}>
