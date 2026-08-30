@@ -6,6 +6,9 @@ interface YouTubeSectionProps {
   videos: YouTubeVideo[];
 }
 
+const getEmbedUrl = (videoId: string) =>
+  `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+
 export const YouTubeSection = ({ videos }: YouTubeSectionProps) => {
   const [selected, setSelected] = useState<YouTubeVideo | null>(videos[0] ?? null);
 
@@ -22,11 +25,12 @@ export const YouTubeSection = ({ videos }: YouTubeSectionProps) => {
         <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200">
           <iframe
             title={selected.title}
-            src={`https://www.youtube.com/embed/${selected.youtubeId}`}
+            src={getEmbedUrl(selected.youtubeId)}
             className="h-64 w-full md:h-96"
             loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
           />
         </div>
       ) : null}

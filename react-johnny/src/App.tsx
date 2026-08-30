@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { RequireAdmin } from "./components/RequireAdmin";
 import { MainLayout } from "./layouts/MainLayout";
 import { AdminLoginPage } from "./pages/AdminLoginPage";
@@ -13,31 +14,47 @@ import { ProductDetailsPage } from "./pages/ProductDetailsPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { YouTubePage } from "./pages/YouTubePage";
 
+const ScrollToTop = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+    });
+  }, [location.pathname]);
+
+  return null;
+};
+
 const App = () => (
-  <Routes>
-    <Route element={<MainLayout />}>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/products" element={<ProductsPage />} />
-      <Route path="/categories/:categorySlug" element={<ProductsPage />} />
-      <Route path="/products/:productId" element={<ProductDetailsPage />} />
-      <Route path="/brands" element={<BrandsPage />} />
-      <Route path="/brands/:brandSlug" element={<BrandDetailsPage />} />
-      <Route path="/youtube" element={<YouTubePage />} />
-      <Route path="/contact" element={<ContactPage />} />
-      <Route path="/cart" element={<CartPage />} />
-      <Route path="/admin-login" element={<AdminLoginPage />} />
-      <Route
-        path="/admin"
-        element={
-          <RequireAdmin>
-            <AdminPage />
-          </RequireAdmin>
-        }
-      />
-      <Route path="/categories" element={<Navigate to="/products" replace />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Route>
-  </Routes>
+  <>
+    <ScrollToTop />
+    <Routes>
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/categories/:categorySlug" element={<ProductsPage />} />
+        <Route path="/products/:productId" element={<ProductDetailsPage />} />
+        <Route path="/brands" element={<BrandsPage />} />
+        <Route path="/brands/:brandSlug" element={<BrandDetailsPage />} />
+        <Route path="/youtube" element={<YouTubePage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/admin-login" element={<AdminLoginPage />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <AdminPage />
+            </RequireAdmin>
+          }
+        />
+        <Route path="/categories" element={<Navigate to="/products" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
+  </>
 );
 
 export default App;

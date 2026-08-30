@@ -2,6 +2,9 @@ import { useState } from "react";
 import { catalogRepository } from "../data/catalog";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
 
+const getEmbedUrl = (videoId: string) =>
+  `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+
 export const YouTubePage = () => {
   useDocumentMeta("YouTube", "Watch tutorials and tackle tips from Johnny Fishing Tackle.");
 
@@ -21,11 +24,12 @@ export const YouTubePage = () => {
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <iframe
             title={selectedVideo.title}
-            src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}`}
+            src={getEmbedUrl(selectedVideo.youtubeId)}
             className="h-[280px] w-full md:h-[460px]"
             loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
           />
           <div className="p-4">
             <h2 className="text-xl font-semibold text-slate-900">{selectedVideo.title}</h2>
