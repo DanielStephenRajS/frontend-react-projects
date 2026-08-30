@@ -93,50 +93,60 @@ export const Header = ({ onOpenCategories }: HeaderProps) => {
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white shadow-sm">
       {/* Logo + title + social icons row */}
-      <div className="mx-auto flex w-full max-w-[1400px] items-center gap-4 px-4 py-3 sm:px-6">
-        <button
-          type="button"
-          onClick={onOpenCategories}
-          className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-slate-700 lg:hidden hover:bg-slate-50"
-        >
-          Categories
-        </button>
-
-        <NavLink to="/" className="flex flex-1 items-center gap-3">
-          <img
-            src={store.logoUrl}
-            alt="Johnny Fishing Tackle logo"
-            className="h-12 w-12 rounded-full border border-slate-200 object-cover shadow-sm"
-          />
-          <div>
-            <p className="font-display text-2xl font-bold leading-none text-slate-900">Johnny Fishing Tackles</p>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">johnnyfishingtackles.com</p>
-          </div>
-        </NavLink>
-
-        <div className="hidden items-center gap-2 md:flex">
-          {socialLinks.map((social) => (
-            <a
-              key={social.label}
-              href={social.href}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={social.label}
-              title={social.label}
-              className={socialButtonClass(social.label)}
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-3 sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="flex items-center gap-2 sm:flex-1">
+            <button
+              type="button"
+              onClick={onOpenCategories}
+              className="rounded-full border border-slate-300 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-700 lg:hidden hover:bg-slate-50"
             >
-              {renderSocialIcon(social.label)}
-            </a>
-          ))}
-        </div>
+              Categories
+            </button>
 
-        <button
-          type="button"
-          onClick={() => setOpenNav((value) => !value)}
-          className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-slate-700 md:hidden hover:bg-slate-50"
-        >
-          Nav
-        </button>
+            <NavLink to="/" className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+              <img
+                src={store.logoUrl}
+                alt="Johnny Fishing Tackle logo"
+                className="h-10 w-10 rounded-full border border-slate-200 object-cover shadow-sm sm:h-12 sm:w-12"
+              />
+              <div className="min-w-0">
+                <p className="truncate font-display text-lg font-bold leading-tight text-slate-900 sm:text-2xl">
+                  Johnny Fishing Tackles
+                </p>
+                <p className="text-[9px] uppercase tracking-[0.18em] text-slate-500 sm:text-xs">
+                  johnnyfishingtackles.com
+                </p>
+              </div>
+            </NavLink>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 sm:justify-end">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={social.label}
+                  title={social.label}
+                  className={`${socialButtonClass(social.label)} h-8 w-8 sm:h-10 sm:w-10`}
+                >
+                  {renderSocialIcon(social.label)}
+                </a>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setOpenNav((value) => !value)}
+              className="rounded-full border border-slate-300 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-700 sm:hidden hover:bg-slate-50"
+            >
+              Nav
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Navigation bar */}
