@@ -10,7 +10,7 @@ interface HeaderProps {
 type SocialPlatform = "Facebook" | "Instagram" | "Telegram" | "YouTube" | "WhatsApp" | "Gmail";
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
-  `whitespace-nowrap px-1.5 py-2 text-[9.5px] font-semibold tracking-tight transition sm:px-3 sm:py-3 sm:text-sm ${isActive ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-700 hover:text-slate-900"}`;
+  `whitespace-nowrap px-1.5 py-2 text-[10.5px] font-semibold tracking-tight transition sm:px-3 sm:py-3 sm:text-sm ${isActive ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-700 hover:text-slate-900"}`;
 
 export const Header = ({ onOpenCategories }: HeaderProps) => {
   const { itemCount } = useCart();
