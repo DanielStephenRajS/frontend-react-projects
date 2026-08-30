@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useCart } from "../hooks/useCart";
 import { useAdmin } from "../hooks/useAdmin";
@@ -17,7 +16,6 @@ export const Header = ({ onOpenCategories }: HeaderProps) => {
   const { itemCount } = useCart();
   const { isAdmin } = useAdmin();
   const store = catalogRepository.getStore();
-  const [openNav, setOpenNav] = useState(false);
   const socialLinks = [
     { label: "Facebook", href: "https://www.facebook.com/share/18saneJjyT/?mibextid=wwXIfr" },
     { label: "Instagram", href: "https://www.instagram.com/johnny_fishing_tackle?igsh=ZHAyZGlkaG5idnJ6" },
@@ -137,22 +135,13 @@ export const Header = ({ onOpenCategories }: HeaderProps) => {
                 </a>
               ))}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setOpenNav((value) => !value)}
-              className="rounded-full border border-slate-300 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-700 sm:hidden hover:bg-slate-50"
-            >
-              Nav
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Navigation bar */}
       <div className="border-t border-slate-100 bg-white">
-        <div className="mx-auto flex w-full max-w-[1400px] px-4 sm:px-6">
-          <nav className="hidden items-center gap-2 md:flex">
+        <div className="mx-auto w-full max-w-[1400px] px-4 py-2 sm:px-6">
+          <nav className="flex flex-wrap items-center gap-1.5 md:flex md:gap-2">
             <NavLink to="/" end className={navClass}>
               Home
             </NavLink>
@@ -178,36 +167,6 @@ export const Header = ({ onOpenCategories }: HeaderProps) => {
             ) : null}
           </nav>
         </div>
-
-        {openNav ? (
-          <div className="border-t border-slate-200 bg-white px-4 py-3">
-            <nav className="grid gap-2 md:hidden">
-              <NavLink onClick={() => setOpenNav(false)} to="/" end className={navClass}>
-                Home
-              </NavLink>
-              <NavLink onClick={() => setOpenNav(false)} to="/products" className={navClass}>
-                Categories
-              </NavLink>
-              <NavLink onClick={() => setOpenNav(false)} to="/brands" className={navClass}>
-                Brands
-              </NavLink>
-              <NavLink onClick={() => setOpenNav(false)} to="/youtube" className={navClass}>
-                YouTube
-              </NavLink>
-              <NavLink onClick={() => setOpenNav(false)} to="/contact" className={navClass}>
-                Contact
-              </NavLink>
-              <NavLink onClick={() => setOpenNav(false)} to="/cart" className={navClass}>
-                Cart ({itemCount})
-              </NavLink>
-              {isAdmin ? (
-                <NavLink onClick={() => setOpenNav(false)} to="/admin" className={navClass}>
-                  Admin
-                </NavLink>
-              ) : null}
-            </nav>
-          </div>
-        ) : null}
       </div>
     </header>
   );
