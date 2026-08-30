@@ -8,16 +8,6 @@ foreach ($dir in $dirs) {
 
 $files = @(
   @{Path="hero/fishing-hero.jpg"; Url="https://picsum.photos/seed/fishinghero/1800/1000"},
-  @{Path="categories/rods.jpg"; Url="https://picsum.photos/seed/catrods/1200/800"},
-  @{Path="categories/reels.jpg"; Url="https://picsum.photos/seed/catreels/1200/800"},
-  @{Path="categories/lures.jpg"; Url="https://picsum.photos/seed/catlures/1200/800"},
-  @{Path="categories/accessories.jpg"; Url="https://picsum.photos/seed/cataccessories/1200/800"},
-  @{Path="categories/terminal-tackle.jpg"; Url="https://picsum.photos/seed/catterminal/1200/800"},
-  @{Path="categories/frog-lures.jpg"; Url="https://picsum.photos/seed/catfrog/1200/800"},
-  @{Path="categories/freshwater-lures.jpg"; Url="https://picsum.photos/seed/catfreshwater/1200/800"},
-  @{Path="categories/saltwater-lures.jpg"; Url="https://picsum.photos/seed/catsaltwater/1200/800"},
-  @{Path="categories/fishing-nets.jpg"; Url="https://picsum.photos/seed/catnets/1200/800"},
-  @{Path="categories/t-shirts.jpg"; Url="https://picsum.photos/seed/cattshirts/1200/800"},
   @{Path="brands/lucana-banner.jpg"; Url="https://picsum.photos/seed/lucanabanner/1400/700"},
   @{Path="brands/tackleman-banner.jpg"; Url="https://picsum.photos/seed/tacklemanbanner/1400/700"},
   @{Path="products/rod-1-a.jpg"; Url="https://picsum.photos/seed/rod1a/1200/900"},
