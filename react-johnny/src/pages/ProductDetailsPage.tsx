@@ -79,6 +79,11 @@ export const ProductDetailsPage = () => {
       return;
     }
 
+    const confirmed = window.confirm(`Are you sure you want to delete "${product.name}"?`);
+    if (!confirmed) {
+      return;
+    }
+
     try {
       if (productId.startsWith("admin-")) {
         removeAdminProduct(productId);
