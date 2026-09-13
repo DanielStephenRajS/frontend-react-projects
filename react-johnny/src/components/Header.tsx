@@ -12,6 +12,16 @@ type SocialPlatform = "Facebook" | "Instagram" | "Telegram" | "YouTube" | "Whats
 const navClass = ({ isActive }: { isActive: boolean }) =>
   `whitespace-nowrap px-2 py-2 text-[10.5px] font-semibold tracking-tight transition sm:px-3 sm:py-2.5 sm:text-sm ${isActive ? "border-b-2 border-emerald-600 text-emerald-700" : "text-slate-700 hover:text-slate-900"}`;
 
+const cartNavClass = ({ isActive }: { isActive: boolean }, itemCount: number) => {
+  const base = navClass({ isActive });
+
+  if (itemCount <= 0) {
+    return base;
+  }
+
+  return `${base} rounded-md border border-amber-200 bg-amber-50 text-amber-700 shadow-sm`;
+};
+
 export const Header = ({ onOpenCategories }: HeaderProps) => {
   const { itemCount } = useCart();
   const { isAdmin } = useAdmin();
@@ -157,7 +167,7 @@ export const Header = ({ onOpenCategories }: HeaderProps) => {
             <NavLink to="/contact" className={navClass}>
               Contact
             </NavLink>
-            <NavLink to="/cart" className={navClass}>
+            <NavLink to="/cart" className={({ isActive }) => cartNavClass({ isActive }, itemCount)}>
               Cart {itemCount > 0 ? `(${itemCount})` : ""}
             </NavLink>
             {isAdmin ? (

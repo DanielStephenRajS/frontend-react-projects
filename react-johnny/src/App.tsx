@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { catalogRepository } from "./data/catalog";
 import { RequireAdmin } from "./components/RequireAdmin";
@@ -14,6 +14,8 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProductDetailsPage } from "./pages/ProductDetailsPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { YouTubePage } from "./pages/YouTubePage";
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000").replace(/\/$/, "");
 
 const staticImageUrls: string[] = Array.from(
   new Set(
@@ -57,8 +59,69 @@ const ScrollToTop = () => {
   return null;
 };
 
+const WakeApiOnFirstLoad = () => {
+  useEffect(() => {
+    const checkKey = "johnny-api-health-check";
+    const alreadyChecked = sessionStorage.getItem(checkKey) === "done";
+
+    if (alreadyChecked) {
+      return;
+    }
+
+    const wakeApi = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/health`, {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Health check failed with status ${response.status}`);
+        }
+
+        sessionStorage.setItem(checkKey, "done");
+      } catch {
+        sessionStorage.setItem(checkKey, "failed");
+      }
+    };
+
+    void wakeApi();
+  }, []);
+
+  return null;
+};
+
+const CartSuccessToast = () => {
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleCartAdd = () => {
+      setMessage("Added successfully");
+      window.setTimeout(() => setMessage(null), 1800);
+    };
+
+    window.addEventListener("cart:add", handleCartAdd);
+    return () => window.removeEventListener("cart:add", handleCartAdd);
+  }, []);
+
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div className="pointer-events-none fixed right-4 top-24 z-50">
+      <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-lg ring-1 ring-white">
+        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-xs text-white">✓</span>
+        {message}
+      </div>
+    </div>
+  );
+};
+
 const App = () => (
   <>
+    <WakeApiOnFirstLoad />
+    <CartSuccessToast />
     <PreloadStaticImages />
     <ScrollToTop />
     <Routes>

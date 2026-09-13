@@ -124,6 +124,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
 
         dispatch({ type: "add", productId, quantity: requestedQuantity, variant });
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("cart:add", { detail: { productId, quantity: requestedQuantity } }));
+        }
         return;
       }
 
@@ -135,6 +138,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
 
       dispatch({ type: "add", productId, quantity: requestedQuantity });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("cart:add", { detail: { productId, quantity: requestedQuantity } }));
+      }
     },
     [products, state.items],
   );
