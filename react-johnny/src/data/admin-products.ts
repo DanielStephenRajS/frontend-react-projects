@@ -1,4 +1,4 @@
-import type { Product } from "../types";
+import type { Product, ProductVariant } from "../types";
 
 const ADMIN_PRODUCTS_STORAGE_KEY = "johnny-fishing-admin-products";
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000").replace(/\/$/, "");
@@ -17,6 +17,7 @@ export interface ProductApiPayload {
   is_featured?: boolean;
   is_active?: boolean;
   images?: Array<string | File>;
+  variants?: ProductVariant[];
 }
 
 export class AdminStorageQuotaError extends Error {
@@ -103,6 +104,9 @@ const buildProductFormData = (payload: ProductApiPayload): FormData => {
   if (payload.stock_quantity !== undefined && payload.stock_quantity !== null) {
     formData.append("stock_quantity", String(payload.stock_quantity));
   }
+
+  const variantPayload = JSON.stringify(payload.variants ?? []);
+  formData.append("product_variants", variantPayload);
 
   formData.append("is_featured", String(Boolean(payload.is_featured)));
   formData.append("is_active", String(Boolean(payload.is_active ?? true)));

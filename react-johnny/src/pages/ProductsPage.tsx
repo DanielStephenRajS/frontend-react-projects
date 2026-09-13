@@ -14,7 +14,7 @@ export const ProductsPage = () => {
   const brandFromQuery = searchParams.get("brand") ?? "all";
   const categories = catalogRepository.getCategories();
   const brands = catalogRepository.getBrands();
-  const { products } = useProducts();
+  const { products, isLoading } = useProducts();
 
   const [filters, setFilters] = useState({
     ...defaultFilters,
@@ -34,7 +34,9 @@ export const ProductsPage = () => {
     [products, filters, categorySlug, brandFromQuery],
   );
 
-  const selectedCategory = categories.find((category) => category.slug === (categorySlug ?? filters.categorySlug));
+  const selectedCategory =
+    categories.find((category) => category.slug === (categorySlug ?? filters.categorySlug)) ??
+    categories.find((category) => category.subcategories?.some((subcategory) => subcategory.slug === (categorySlug ?? filters.categorySlug)));
 
   return (
     <div className="space-y-6">
@@ -58,17 +60,39 @@ export const ProductsPage = () => {
         onChange={(next) => setFilters(next)}
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {visibleProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </section>
-
-      {visibleProducts.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
-          No products match your filters.
+      {isLoading ? (
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={`product-loading-${index}`} className="animate-pulse overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="h-52 w-full bg-slate-200" />
+              <div className="space-y-3 p-4">
+                <div className="h-3 w-20 rounded bg-slate-200" />
+                <div className="h-5 w-3/4 rounded bg-slate-200" />
+                <div className="h-4 w-full rounded bg-slate-200" />
+                <div className="h-4 w-2/3 rounded bg-slate-200" />
+                <div className="flex items-center justify-between pt-2">
+                  <div className="h-6 w-20 rounded bg-slate-200" />
+                  <div className="h-9 w-24 rounded-full bg-slate-200" />
+                </div>
+              </div>
+            </div>
+          ))}
         </section>
-      ) : null}
+      ) : (
+        <>
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {visibleProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </section>
+
+          {visibleProducts.length === 0 ? (
+            <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+              No products match your filters.
+            </section>
+          ) : null}
+        </>
+      )}
     </div>
   );
 };

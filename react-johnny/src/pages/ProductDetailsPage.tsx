@@ -20,6 +20,8 @@ export const ProductDetailsPage = () => {
   const product = products.find((item) => item.id === productId);
   const normalizedActiveImage = normalizeImageUrl(product?.images[0]);
   const [activeImage, setActiveImage] = useState<string | undefined>(normalizedActiveImage);
+  const [quantity, setQuantity] = useState(1);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [zoomStyle, setZoomStyle] = useState<React.CSSProperties | null>(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const metaTitle = product ? product.name : "Product";
@@ -31,9 +33,34 @@ export const ProductDetailsPage = () => {
 
   useEffect(() => {
     setActiveImage(normalizeImageUrl(product?.images[0]));
+    setQuantity(1);
     setZoomStyle(null);
     setIsZoomOpen(false);
   }, [product]);
+
+  const sortedVariants = (product?.variants ?? []).filter((variant) => variant.is_active !== false).sort((left, right) => Number(left.sort_order ?? 0) - Number(right.sort_order ?? 0));
+
+  useEffect(() => {
+    if (!sortedVariants.length) {
+      setSelectedVariantId(null);
+      return;
+    }
+
+    const firstVariantKey = String(sortedVariants[0].variant_id ?? `${sortedVariants[0].variant_type}-${sortedVariants[0].variant_value}`);
+    setSelectedVariantId((current) => {
+      if (current) {
+        const stillExists = sortedVariants.some(
+          (variant) => String(variant.variant_id ?? `${variant.variant_type}-${variant.variant_value}`) === current,
+        );
+
+        if (stillExists) {
+          return current;
+        }
+      }
+
+      return firstVariantKey;
+    });
+  }, [sortedVariants]);
 
   const handleImageMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -66,7 +93,25 @@ export const ProductDetailsPage = () => {
   }
 
   const related = getRelatedProducts(products, product);
-  const outOfStock = typeof product.quantity === "number" && product.quantity <= 0;
+  const activeVariants = sortedVariants;
+  const variantTypeName = activeVariants[0]?.variant_type || "Variant";
+  const selectedVariant =
+    activeVariants.find(
+      (variant) => String(variant.variant_id ?? `${variant.variant_type}-${variant.variant_value}`) === selectedVariantId,
+    ) ?? activeVariants[0] ?? null;
+  const displayedPrice = selectedVariant ? (selectedVariant.price_inr ?? product.price) : product.price;
+  const displayedStock = selectedVariant ? Number(selectedVariant.stock ?? product.quantity ?? 0) : Number(product.quantity ?? 0);
+  const hasVariants = activeVariants.length > 0;
+  const outOfStock = hasVariants ? displayedStock <= 0 : typeof product.quantity === "number" && product.quantity <= 0;
+  const maxQuantity = hasVariants ? displayedStock : typeof product.quantity === "number" ? product.quantity : undefined;
+  const handleQuantityChange = (nextQuantity: number) => {
+    if (outOfStock) {
+      return;
+    }
+
+    const clampedQuantity = typeof maxQuantity === "number" ? Math.min(Math.max(nextQuantity, 1), maxQuantity) : Math.max(nextQuantity, 1);
+    setQuantity(clampedQuantity);
+  };
   const keyFeatures =
     product.keyFeatures && product.keyFeatures.length > 0
       ? product.keyFeatures
@@ -145,23 +190,86 @@ export const ProductDetailsPage = () => {
               );
             })}
           </div>
+
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">{product.category}</p>
           <h1 className="mt-2 font-display text-4xl text-slate-900">{product.name}</h1>
           <p className="mt-3 text-sm text-slate-600">{product.description}</p>
-          <p className="mt-4 text-3xl font-bold text-slate-900">{formatCurrencyINR(product.price)}</p>
+          <p className="mt-4 text-3xl font-bold text-slate-900">{formatCurrencyINR(displayedPrice)}</p>
           <p className="mt-2 text-sm text-slate-500">Brand: {product.brand}</p>
           <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.1em] ${outOfStock ? "text-rose-600" : "text-emerald-700"}`}>
             {outOfStock ? "No Stocks Available" : "In Stock"}
           </p>
 
-          <div className="mt-5 flex flex-wrap gap-3">
+          {hasVariants ? (
+            <div className="mt-5 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">{variantTypeName}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {activeVariants.map((variant) => {
+                    const variantKey = String(variant.variant_id ?? `${variant.variant_type}-${variant.variant_value}`);
+                    const isSelected = selectedVariantId === variantKey;
+                    const stockValue = Number(variant.stock ?? 0);
+                    const isDisabled = stockValue <= 0;
+
+                    return (
+                      <button
+                        key={variantKey}
+                        type="button"
+                        onClick={() => setSelectedVariantId(variantKey)}
+                        disabled={isDisabled}
+                        className={`rounded-full border px-3 py-2 text-sm font-medium transition ${
+                          isSelected
+                            ? "border-emerald-600 bg-emerald-600 text-white"
+                            : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                        } ${isDisabled ? "cursor-not-allowed opacity-45" : ""}`}
+                      >
+                        {variant.variant_value}
+                        {isDisabled ? " • Out of stock" : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {!selectedVariant ? (
+                <p className="text-xs font-medium text-amber-700">Please select a {variantTypeName.toLowerCase()} option before adding to cart.</p>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-slate-700">Qty</span>
+              <div className="flex items-center overflow-hidden rounded-full border border-slate-300 bg-slate-50">
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(quantity - 1)}
+                  disabled={outOfStock || quantity <= 1}
+                  className="flex h-10 w-10 items-center justify-center text-xl font-semibold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:text-slate-400"
+                  aria-label="Decrease quantity"
+                >
+                  −
+                </button>
+                <span className="min-w-12 text-center text-sm font-semibold text-slate-900">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                  disabled={outOfStock || (typeof maxQuantity === "number" && quantity >= maxQuantity)}
+                  className="flex h-10 w-10 items-center justify-center text-xl font-semibold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:text-slate-400"
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
             <button
               type="button"
-              onClick={() => addToCart(product.id)}
-              disabled={outOfStock}
+              onClick={() => addToCart(product.id, quantity, selectedVariant)}
+              disabled={outOfStock || (hasVariants && !selectedVariant)}
               className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               {outOfStock ? "Out Of Stock" : "Add To Cart"}
@@ -187,34 +295,30 @@ export const ProductDetailsPage = () => {
             )}
           </div>
 
-          <h2 className="mt-6 text-lg font-semibold text-slate-900">Key Features</h2>
-          <ul className="mt-2 space-y-1 text-sm text-slate-700">
-            {keyFeatures.map((feature) => (
-              <li key={feature} className="flex items-start gap-2">
-                <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
+          {typeof maxQuantity === "number" ? (
+            <p className="mt-2 text-xs text-slate-500">Available stock: {maxQuantity}</p>
+          ) : null}
 
-          <h2 className="mt-6 text-lg font-semibold text-slate-900">Specifications</h2>
-          <dl className="mt-2 space-y-2 text-sm">
-            {Object.entries(product.specifications).map(([key, value]) => (
-              <div key={key} className="flex items-center justify-between gap-2 border-b border-slate-100 py-1.5">
-                <dt className="text-slate-600">{key}</dt>
-                <dd className="font-medium text-slate-900">{value}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <h2 className="text-lg font-semibold text-slate-900">Payment Options</h2>
-            <p className="mt-1 text-sm text-slate-600">Secure checkout with Razorpay and flexible EMI plans.</p>
-            <ul className="mt-3 space-y-1 text-sm text-slate-700">
-              <li>Razorpay: UPI, cards, netbanking, wallets</li>
-              <li>EMI plans: 3, 6, 9, and 12 months (bank eligibility applies)</li>
-              <li>No-cost EMI options available on selected products</li>
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+            <h2 className="text-lg font-semibold text-slate-900">Key Features</h2>
+            <ul className="mt-3 space-y-2 text-sm text-slate-700">
+              {keyFeatures.map((feature) => (
+                <li key={feature} className="flex items-start gap-2">
+                  <span className="mt-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                  <span>{feature}</span>
+                </li>
+              ))}
             </ul>
+
+            <h2 className="mt-6 text-lg font-semibold text-slate-900">Specifications</h2>
+            <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+              {Object.entries(product.specifications).map(([key, value]) => (
+                <div key={key} className="rounded-xl border border-slate-200 bg-white p-3">
+                  <dt className="text-slate-600">{key}</dt>
+                  <dd className="mt-1 font-medium text-slate-900">{value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
       </div>

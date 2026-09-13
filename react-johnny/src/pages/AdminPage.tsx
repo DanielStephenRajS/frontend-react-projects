@@ -5,6 +5,7 @@ import { catalogRepository } from "../data/catalog";
 import { useAdmin } from "../hooks/useAdmin";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
 import { useProducts } from "../hooks/useProducts";
+import type { ProductVariant } from "../types";
 
 const MAX_UPLOAD_IMAGES = 5;
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
@@ -68,12 +69,41 @@ export const AdminPage = () => {
   const { logout } = useAdmin();
   const categories = catalogRepository.getCategories();
   const brands = catalogRepository.getBrands();
+  const categoryOptions: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    description?: string;
+    image?: string;
+    parentName?: string;
+    parentSlug?: string;
+  }> = categories.flatMap((category) =>
+    category.subcategories?.length
+      ? category.subcategories.map((subcategory) => ({
+          id: subcategory.id,
+          name: subcategory.name,
+          slug: subcategory.slug,
+          description: subcategory.description,
+          image: subcategory.image,
+          parentName: category.name,
+          parentSlug: category.slug,
+        }))
+      : [{
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          description: category.description,
+          image: category.image,
+          parentName: category.name,
+          parentSlug: category.slug,
+        }],
+  );
   const [refreshTick, setRefreshTick] = useState(0);
   const { products } = useProducts(refreshTick);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [categorySlug, setCategorySlug] = useState(categories[0]?.slug ?? "rods");
+  const [categorySlug, setCategorySlug] = useState(categoryOptions[0]?.slug ?? categories[0]?.slug ?? "rods");
   const [brandSlug, setBrandSlug] = useState(brands[0]?.slug ?? "lucana");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -81,6 +111,9 @@ export const AdminPage = () => {
   const [imageUrlsInput, setImageUrlsInput] = useState("");
   const [keyFeaturesInput, setKeyFeaturesInput] = useState("");
   const [specInput, setSpecInput] = useState("");
+  const [variantTypePreset, setVariantTypePreset] = useState("Size");
+  const [customVariantType, setCustomVariantType] = useState("");
+  const [productVariants, setProductVariants] = useState<ProductVariant[]>([]);
   const [featured, setFeatured] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -99,7 +132,7 @@ export const AdminPage = () => {
     setName(editingProduct.name);
     setDescription(editingProduct.description);
     setBrandSlug(editingProduct.brandSlug || brands[0]?.slug || "lucana");
-    setCategorySlug(editingProduct.categorySlug || categories[0]?.slug || "rods");
+    setCategorySlug(editingProduct.categorySlug || categoryOptions[0]?.slug || categories[0]?.slug || "rods");
     setPrice(String(editingProduct.price));
     setQuantity(editingProduct.quantity != null ? String(editingProduct.quantity) : "");
     setUploadedImages(
@@ -111,15 +144,32 @@ export const AdminPage = () => {
         })) ?? [],
     );
     setImageUrlsInput(editingProduct.images?.filter((image) => image.startsWith("http")).join("\n") ?? "");
-    setKeyFeaturesInput(editingProduct.keyFeatures?.join("; ") ?? "");
+    setKeyFeaturesInput(editingProduct.keyFeatures?.join("\n") ?? "");
     setSpecInput(specLines || "");
+    setProductVariants(
+      (editingProduct.variants ?? []).map((variant) => ({
+        ...variant,
+        variant_type: variant.variant_type || "Size",
+        variant_value: variant.variant_value || "",
+        stock: typeof variant.stock === "number" ? variant.stock : Number(variant.stock ?? 0),
+        sku: variant.sku ?? "",
+        price_inr: variant.price_inr ?? null,
+        is_active: variant.is_active !== false,
+        sort_order: variant.sort_order ?? 0,
+      })),
+    );
+    setVariantTypePreset((editingProduct.variants ?? [])[0]?.variant_type ?? "Size");
+    setCustomVariantType("");
     setFeatured(Boolean(editingProduct.featured));
     setEditingProductId(editingProduct.id);
     setMessage(`Editing ${editingProduct.name}. Update the fields and save.`);
   }, [brands, categories, editingProduct]);
 
   const brand = useMemo(() => brands.find((item) => item.slug === brandSlug), [brands, brandSlug]);
-  const category = useMemo(() => categories.find((item) => item.slug === categorySlug), [categories, categorySlug]);
+  const category = useMemo(
+    () => categoryOptions.find((item) => item.slug === categorySlug) ?? categories.find((item) => item.slug === categorySlug),
+    [categories, categoryOptions, categorySlug],
+  );
 
   const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -178,26 +228,93 @@ export const AdminPage = () => {
     setImageUrlsInput("");
     setKeyFeaturesInput("");
     setSpecInput("");
+    setVariantTypePreset("Size");
+    setCustomVariantType("");
+    setProductVariants([]);
     setFeatured(false);
     setBrandSlug(brands[0]?.slug ?? "lucana");
-    setCategorySlug(categories[0]?.slug ?? "rods");
+    setCategorySlug(categoryOptions[0]?.slug ?? categories[0]?.slug ?? "rods");
     setEditingProductId(null);
+  };
+
+  const addVariantRow = () => {
+    const resolvedType = (variantTypePreset === "Other" ? customVariantType : variantTypePreset).trim();
+    if (!resolvedType) {
+      setMessage("Please choose a variant type or enter a custom type before adding a variant.");
+      return;
+    }
+
+    setProductVariants((current) => [
+      ...current,
+      {
+        variant_type: resolvedType,
+        variant_value: "",
+        stock: 0,
+        sku: "",
+        price_inr: null,
+        is_active: true,
+        sort_order: current.length + 1,
+      },
+    ]);
+  };
+
+  const updateVariant = (index: number, field: keyof ProductVariant, value: ProductVariant[keyof ProductVariant]) => {
+    setProductVariants((current) =>
+      current.map((variant, variantIndex) => (variantIndex === index ? { ...variant, [field]: value } : variant)),
+    );
+  };
+
+  const removeVariant = (index: number) => {
+    setProductVariants((current) => current.filter((_, variantIndex) => variantIndex !== index));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    const hasVariants = productVariants.length > 0;
+
+    const normalizedVariants = productVariants
+      .map((variant, index) => {
+        const variantType = String(variant.variant_type ?? "").trim();
+        const variantValue = String(variant.variant_value ?? "").trim();
+
+        if (!variantType || !variantValue) {
+          return null;
+        }
+
+        const parsedVariantStock = Number(variant.stock ?? 0);
+        const parsedVariantPrice = variant.price_inr === null || variant.price_inr === undefined ? null : Number(variant.price_inr);
+
+        return {
+          variant_id: variant.variant_id,
+          product_id: editingProductId ?? undefined,
+          variant_type: variantType,
+          variant_value: variantValue,
+          sku: variant.sku?.trim() || undefined,
+          price_inr: Number.isFinite(parsedVariantPrice) ? parsedVariantPrice : null,
+          stock: Number.isFinite(parsedVariantStock) ? parsedVariantStock : 0,
+          is_active: variant.is_active !== false,
+          sort_order: Number.isFinite(Number(variant.sort_order)) ? Number(variant.sort_order) : index + 1,
+        } satisfies ProductVariant;
+      })
+      .filter(Boolean) as ProductVariant[];
+
     const parsedPrice = Number(price);
     const parsedQuantity = Number(quantity);
+    const computedProductQuantity = hasVariants
+      ? normalizedVariants.reduce((sum, variant) => sum + Math.max(0, Number(variant.stock ?? 0)), 0)
+      : parsedQuantity;
 
-    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
-      setMessage("Please enter a valid price.");
-      return;
-    }
+    if (!hasVariants) {
+      if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+        setMessage("Please enter a valid price.");
+        return;
+      }
 
-    if (!Number.isInteger(parsedQuantity) || parsedQuantity < 0) {
-      setMessage("Please enter a valid quantity (0 or more).");
-      return;
+      if (!Number.isInteger(parsedQuantity) || parsedQuantity < 0) {
+        setMessage("Please enter a valid quantity (0 or more).");
+        return;
+      }
     }
 
     if (!brand || !category) {
@@ -218,11 +335,19 @@ export const AdminPage = () => {
         return acc;
       }, {});
 
-    const keyFeatures = keyFeaturesInput
-      .split(";")
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .join("; ");
+    const parsedKeyFeatures = keyFeaturesInput
+      .replace(/\r/g, "\n")
+      .split(/\n+/)
+      .flatMap((segment) =>
+        segment
+          .split(/(?<=[.!?])\s+(?=[A-Z0-9])/)
+          .map((part) => part.trim())
+          .filter(Boolean),
+      )
+      .map((item) => item.replace(/^[\-\*\d\.\)]\s*/, "").replace(/^[:\-–—]\s*/, "").trim())
+      .filter(Boolean);
+
+    const keyFeaturesText = parsedKeyFeatures.join("\n");
 
     const imageUrls = imageUrlsInput
       .split("\n")
@@ -246,20 +371,24 @@ export const AdminPage = () => {
       ? Object.entries(specs)
           .map(([key, value]) => `${key}: ${value}`)
           .join("; ")
-      : "Feature: Details coming soon";
+      : "";
+
+    const selectedCategoryName = category?.name ?? "";
+    const selectedCategorySlugValue = category?.slug ?? categorySlug;
 
     const productPayload = {
       product_name: name.trim(),
       product_description: description.trim(),
       brand_name: brand.name,
-      category_name: category.name,
+      category_name: selectedCategoryName,
       price_inr: parsedPrice,
-      key_features: keyFeatures,
-      specifications: productSpecifications,
-      stock_quantity: parsedQuantity,
+      key_features: keyFeaturesText || undefined,
+      specifications: productSpecifications || undefined,
+      stock_quantity: computedProductQuantity,
       is_featured: featured,
       is_active: true,
       images: uploadedFiles.length > 0 ? [...uploadedFiles, ...imageUrls] : allImages.length > 0 ? allImages : ["/assets/products/rod-1-a.jpg"],
+      variants: normalizedVariants,
     };
 
     try {
@@ -271,14 +400,15 @@ export const AdminPage = () => {
           shortDescription: "",
           brand: brand.name,
           brandSlug: brand.slug,
-          category: category.name,
-          categorySlug: category.slug,
+          category: selectedCategoryName,
+          categorySlug: selectedCategorySlugValue,
           price: parsedPrice,
           images: allImages.length > 0 ? allImages : ["/assets/products/rod-1-a.jpg"],
           featured,
-          specifications: Object.keys(specs).length ? specs : { Feature: "Details coming soon" },
-          keyFeatures: keyFeatures ? keyFeatures.split(";").map((item) => item.trim()).filter(Boolean) : [],
-          quantity: parsedQuantity,
+          specifications: Object.keys(specs).length ? specs : {},
+          keyFeatures: parsedKeyFeatures,
+          quantity: computedProductQuantity,
+          variants: normalizedVariants,
         };
 
         if (editingProductId.startsWith("admin-")) {
@@ -299,14 +429,15 @@ export const AdminPage = () => {
           shortDescription: "",
           brand: brand.name,
           brandSlug: brand.slug,
-          category: category.name,
-          categorySlug: category.slug,
+          category: selectedCategoryName,
+          categorySlug: selectedCategorySlugValue,
           price: parsedPrice,
           images: allImages.length > 0 ? allImages : ["/assets/products/rod-1-a.jpg"],
           featured,
-          specifications: Object.keys(specs).length ? specs : { Feature: "Details coming soon" },
-          keyFeatures: keyFeatures ? keyFeatures.split(";").map((item) => item.trim()).filter(Boolean) : [],
-          quantity: parsedQuantity,
+          specifications: Object.keys(specs).length ? specs : {},
+          keyFeatures: parsedKeyFeatures,
+          quantity: computedProductQuantity,
+          variants: normalizedVariants,
         });
 
         setMessage("Product added successfully. It is now visible in categories/products.");
@@ -349,7 +480,7 @@ export const AdminPage = () => {
 
       <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-2">
         <div className="lg:col-span-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
-          API input hint: use key features separated by semicolon (;), specifications as one key:value per line, and add image URLs one per line when available.
+          API input hint: write each key feature on a new line or as a sentence; the page will display them as bullets. Specifications stay as one key:value per line.
         </div>
 
         <label className="text-sm font-medium text-slate-700">
@@ -409,30 +540,157 @@ export const AdminPage = () => {
         <label className="text-sm font-medium text-slate-700">
           Category
           <select value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
-            {categories.map((item) => (
-              <option key={item.slug} value={item.slug}>{item.name}</option>
-            ))}
+            {categories.map((categoryItem) => {
+              if (categoryItem.subcategories?.length) {
+                return (
+                  <optgroup key={categoryItem.id} label={categoryItem.name}>
+                    {categoryItem.subcategories.map((subcategory) => (
+                      <option key={subcategory.slug} value={subcategory.slug}>
+                        {subcategory.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                );
+              }
+
+              return (
+                <option key={categoryItem.slug} value={categoryItem.slug}>
+                  {categoryItem.name}
+                </option>
+              );
+            })}
           </select>
         </label>
 
         <label className="text-sm font-medium text-slate-700">
           Price (INR)
-          <input type="number" min={1} value={price} onChange={(e) => setPrice(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+          <input
+            type="number"
+            min={productVariants.length > 0 ? 0 : 1}
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required={!productVariants.length}
+            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
         </label>
 
         <label className="text-sm font-medium text-slate-700">
           Quantity
-          <input type="number" min={0} value={quantity} onChange={(e) => setQuantity(e.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+          <input type="number" min={0} value={quantity} onChange={(e) => setQuantity(e.target.value)} required={!productVariants.length} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
         </label>
 
         <label className="text-sm font-medium text-slate-700 lg:col-span-2">
-          Key Features (semicolon separated)
-          <input
+          Key Features
+          <textarea
             value={keyFeaturesInput}
             onChange={(e) => setKeyFeaturesInput(e.target.value)}
+            rows={6}
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
           />
         </label>
+
+        <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Product Variants</p>
+              <p className="text-xs text-slate-500">Add variant entries for Size, Color, Length, Weight, Model, or custom values.</p>
+            </div>
+            <button type="button" onClick={addVariantRow} className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+              + Add Variant
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr]">
+            <label className="text-sm font-medium text-slate-700">
+              Variant Type
+              <select value={variantTypePreset} onChange={(event) => setVariantTypePreset(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
+                <option value="Size">Size</option>
+                <option value="Color">Color</option>
+                <option value="Length">Length</option>
+                <option value="Weight">Weight</option>
+                <option value="Model">Model</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+
+            {variantTypePreset === "Other" ? (
+              <label className="text-sm font-medium text-slate-700">
+                Custom Variant Type
+                <input value={customVariantType} onChange={(event) => setCustomVariantType(event.target.value)} placeholder="e.g. Finish" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" />
+              </label>
+            ) : null}
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {productVariants.length === 0 ? (
+              <p className="text-sm text-slate-500">No variants added yet. The product will use the standard product stock.</p>
+            ) : (
+              productVariants.map((variant, index) => (
+                <div key={`${variant.variant_type}-${index}`} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-[1fr_1fr_0.7fr_1fr_0.7fr_auto_auto]">
+                  <label className="text-xs font-medium text-slate-600">
+                    Type
+                    <input
+                      value={variant.variant_type ?? ""}
+                      onChange={(event) => updateVariant(index, "variant_type", event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="text-xs font-medium text-slate-600">
+                    Value
+                    <input
+                      value={variant.variant_value ?? ""}
+                      onChange={(event) => updateVariant(index, "variant_value", event.target.value)}
+                      placeholder="S - 38"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="text-xs font-medium text-slate-600">
+                    Stock
+                    <input
+                      type="number"
+                      min={0}
+                      value={Number(variant.stock ?? 0)}
+                      onChange={(event) => updateVariant(index, "stock", Number(event.target.value) || 0)}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="text-xs font-medium text-slate-600">
+                    Price
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={variant.price_inr ?? ""}
+                      onChange={(event) => updateVariant(index, "price_inr", event.target.value === "" ? null : Number(event.target.value))}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="text-xs font-medium text-slate-600">
+                    Sort
+                    <input
+                      type="number"
+                      min={0}
+                      value={Number(variant.sort_order ?? 0)}
+                      onChange={(event) => updateVariant(index, "sort_order", Number(event.target.value) || 0)}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-2 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={variant.is_active !== false}
+                      onChange={(event) => updateVariant(index, "is_active", event.target.checked)}
+                    />
+                    Active
+                  </label>
+                  <button type="button" onClick={() => removeVariant(index)} className="mt-6 rounded-lg border border-red-200 bg-red-50 px-2 py-2 text-xs font-semibold text-red-700">
+                    Remove
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
 
         <label className="text-sm font-medium text-slate-700 lg:col-span-2">
           Specifications (one per line, key:value)

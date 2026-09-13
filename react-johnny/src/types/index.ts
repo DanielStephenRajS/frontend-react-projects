@@ -1,9 +1,18 @@
+export interface CategorySubcategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+}
+
 export interface Category {
   id: string;
   name: string;
   slug: string;
   description: string;
   image: string;
+  subcategories?: CategorySubcategory[];
 }
 
 export interface Brand {
@@ -21,6 +30,20 @@ export interface Brand {
   featuredProductIds?: string[];
 }
 
+export interface ProductVariant {
+  variant_id?: string | number;
+  product_id?: string | number;
+  variant_type: string;
+  variant_value: string;
+  sku?: string;
+  price_inr?: number | null;
+  stock?: number;
+  is_active?: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -36,6 +59,7 @@ export interface Product {
   specifications: Record<string, string>;
   keyFeatures?: string[];
   quantity?: number;
+  variants?: ProductVariant[];
 }
 
 export interface YouTubeVideo {
@@ -67,6 +91,10 @@ export interface GoogleReview {
 export interface CartItem {
   productId: string;
   quantity: number;
+  variantId?: string;
+  variantType?: string;
+  variantValue?: string;
+  price?: number;
 }
 
 export type ProductSort = "price-asc" | "price-desc" | "name-asc";

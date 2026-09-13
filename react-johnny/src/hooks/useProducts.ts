@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAdminProducts, pruneStaleAdminProducts } from "../data/admin-products";
 import { normalizeImageUrl } from "../utils/images";
-import type { Product } from "../types";
+import type { Product, ProductVariant } from "../types";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000").replace(/\/$/, "");
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products`;
@@ -12,6 +12,18 @@ interface ApiProductImage {
   image_content_type?: string | null;
   sort_order?: number;
   is_primary?: boolean;
+}
+
+interface ApiProductVariant {
+  variant_id?: number | string;
+  product_id?: number | string;
+  variant_type?: string;
+  variant_value?: string;
+  sku?: string | null;
+  price_inr?: number | null;
+  stock?: number | null;
+  is_active?: boolean;
+  sort_order?: number | null;
 }
 
 interface ApiProduct {
@@ -28,6 +40,8 @@ interface ApiProduct {
   is_featured: boolean;
   is_active: boolean;
   images?: ApiProductImage[];
+  variants?: ApiProductVariant[] | string | null;
+  product_variants?: ApiProductVariant[] | string | null;
 }
 
 const slugify = (value: string): string =>
@@ -43,9 +57,25 @@ const parseKeyFeatures = (raw: string | null | undefined): string[] | undefined 
     return undefined;
   }
 
-  const items = raw
-    .split(";")
-    .map((item) => item.trim())
+  const normalized = raw
+    .replace(/\r/g, "\n")
+    .replace(/\u2022|•|●/g, "\n")
+    .replace(/\s*\n\s*/g, "\n")
+    .trim();
+
+  if (!normalized) {
+    return undefined;
+  }
+
+  const items = normalized
+    .split(/\n+/)
+    .flatMap((segment) =>
+      segment
+        .split(/(?<=[.!?])\s+(?=[A-Z0-9])/)
+        .map((part) => part.trim())
+        .filter(Boolean),
+    )
+    .map((item) => item.replace(/^[\-\*\d\.\)]\s*/, "").replace(/^[:\-–—]\s*/, "").trim())
     .filter(Boolean);
 
   return items.length > 0 ? items : undefined;
@@ -57,7 +87,7 @@ const parseSpecifications = (raw: string | null | undefined): Record<string, str
   }
 
   return raw
-    .split(";")
+    .split(/[;\n]/)
     .map((item) => item.trim())
     .filter(Boolean)
     .reduce<Record<string, string>>((acc, pair) => {
@@ -73,6 +103,39 @@ const parseSpecifications = (raw: string | null | undefined): Record<string, str
       }
       return acc;
     }, {});
+};
+
+const parseVariants = (raw: ApiProduct["variants"] | ApiProduct["product_variants"]): ProductVariant[] => {
+  if (!raw) {
+    return [];
+  }
+
+  if (Array.isArray(raw)) {
+    return raw
+      .filter((variant) => Boolean(variant && variant.variant_type && variant.variant_value))
+      .map((variant) => ({
+        variant_id: variant.variant_id ?? `${variant.variant_type}-${variant.variant_value}`,
+        product_id: variant.product_id ?? undefined,
+        variant_type: String(variant.variant_type ?? ""),
+        variant_value: String(variant.variant_value ?? ""),
+        sku: variant.sku ?? undefined,
+        price_inr: variant.price_inr ?? null,
+        stock: variant.stock ?? 0,
+        is_active: variant.is_active ?? true,
+        sort_order: variant.sort_order ?? 0,
+      })) as ProductVariant[];
+  }
+
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw) as ApiProductVariant[];
+      return parseVariants(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
 };
 
 const normalizeProduct = (item: ApiProduct): Product => {
@@ -127,6 +190,7 @@ const normalizeProduct = (item: ApiProduct): Product => {
     specifications: parseSpecifications(item.specifications),
     keyFeatures: parseKeyFeatures(item.key_features),
     quantity: item.stock_quantity ?? undefined,
+    variants: parseVariants(item.variants ?? item.product_variants),
   };
 };
 

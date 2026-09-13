@@ -1,24 +1,63 @@
 [
   {
-    "id": "cat-rods",
-    "name": "Rods",
+    "id": "cat-rod",
+    "name": "Rod",
     "slug": "rods",
-    "description": "Spinning and casting rods for every fishing style.",
-    "image": "/assets/categories/rods.jpg"
+    "description": "Fishing rods designed for every technique and water type.",
+    "image": "/assets/categories/rods.jpg",
+    "subcategories": [
+      { "id": "cat-rod-spinning", "name": "Spinning Rod", "slug": "spinning-rod" },
+      { "id": "cat-rod-bait-casting", "name": "Bait Casting Rods", "slug": "bait-casting-rods" },
+      { "id": "cat-rod-jig-surf", "name": "Jig / Surf Rod", "slug": "jig-surf-rod" },
+      { "id": "cat-rod-telescopic", "name": "Telescopic Rod", "slug": "telescopic-rod" },
+      { "id": "cat-rod-pole", "name": "Pole Rod", "slug": "pole-rod" }
+    ]
   },
   {
-    "id": "cat-reels",
-    "name": "Reels",
+    "id": "cat-reel",
+    "name": "Reel",
     "slug": "reels",
-    "description": "Performance reels with smooth drag and control.",
-    "image": "/assets/categories/reels.jpg"
+    "description": "Smooth, reliable reels built for control and drag performance.",
+    "image": "/assets/categories/reels.jpg",
+    "subcategories": [
+      { "id": "cat-reel-spinning", "name": "Spinning Reels", "slug": "spinning-reels" },
+      { "id": "cat-reel-bait-casting", "name": "Bait Casting Reels", "slug": "bait-casting-reels" }
+    ]
   },
   {
     "id": "cat-lures",
     "name": "Lures",
     "slug": "lures",
-    "description": "Topwater, crank, and soft bait lure options.",
-    "image": "/assets/categories/lures.jpg"
+    "description": "Topwater, crank, soft bait, and specialty lure options.",
+    "image": "/assets/categories/lures.jpg",
+    "subcategories": [
+      { "id": "cat-lures-hard", "name": "Hard Lure", "slug": "hard-lure" },
+      { "id": "cat-lures-soft", "name": "Soft Baits", "slug": "soft-baits" },
+      { "id": "cat-lures-frogs", "name": "Frogs", "slug": "frogs" },
+      { "id": "cat-lures-jig-spoon-spinner", "name": "Jig / Spoon / Spinner", "slug": "jig-spoon-spinner" }
+    ]
+  },
+  {
+    "id": "cat-lines",
+    "name": "Lines",
+    "slug": "lines",
+    "description": "Fishing lines and leader materials for every setup.",
+    "image": "/assets/categories/lines.jpg"
+  },
+  {
+    "id": "cat-hooks",
+    "name": "Hooks",
+    "slug": "hooks",
+    "description": "Hooks and terminal essentials for live bait and lure fishing.",
+    "image": "/assets/categories/hooks.jpg",
+    "subcategories": [
+      { "id": "cat-hooks-triple", "name": "Triple Hook", "slug": "triple-hook" },
+      { "id": "cat-hooks-jig-heads", "name": "Jig Heads", "slug": "jig-heads" },
+      { "id": "cat-hooks-worm", "name": "Worm Hook", "slug": "worm-hook" },
+      { "id": "cat-hooks-sabiki", "name": "Sabiki", "slug": "sabiki" },
+      { "id": "cat-hooks-assist", "name": "Assist Hooks / Line", "slug": "assist-hooks-line" },
+      { "id": "cat-hooks-live-bait", "name": "Live Bait Hooks", "slug": "live-bait-hooks" }
+    ]
   },
   {
     "id": "cat-accessories",
@@ -35,25 +74,11 @@
     "image": "/assets/categories/terminal-tackle.jpg"
   },
   {
-    "id": "cat-frog-lures",
-    "name": "Frog Lures",
-    "slug": "frog-lures",
-    "description": "Weedless frog lures built for topwater bites.",
-    "image": "/assets/categories/frog-lures.jpg"
-  },
-  {
-    "id": "cat-freshwater-lures",
-    "name": "Freshwater Lures",
-    "slug": "freshwater-lures",
-    "description": "Lures tuned for river, lake, and pond use.",
-    "image": "/assets/categories/freshwater-lures.jpg"
-  },
-  {
-    "id": "cat-saltwater-lures",
-    "name": "Saltwater Lures",
-    "slug": "saltwater-lures",
-    "description": "Corrosion-resistant lures for coastal fishing.",
-    "image": "/assets/categories/saltwater-lures.jpg"
+    "id": "cat-t-shirts",
+    "name": "T-Shirts",
+    "slug": "t-shirts",
+    "description": "Comfortable fishing wear for on and off water.",
+    "image": "/assets/categories/t-shirts.jpg"
   },
   {
     "id": "cat-fishing-nets",
@@ -61,12 +86,5 @@
     "slug": "fishing-nets",
     "description": "Landing nets for boat, shore, and kayak use.",
     "image": "/assets/categories/fishing-nets.jpg"
-  },
-  {
-    "id": "cat-t-shirts",
-    "name": "T-Shirts",
-    "slug": "t-shirts",
-    "description": "Comfortable fishing wear for on and off water.",
-    "image": "/assets/categories/t-shirts.jpg"
   }
 ]

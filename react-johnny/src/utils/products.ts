@@ -1,4 +1,25 @@
+import { catalogRepository } from "../data/catalog";
 import type { Product, ProductFilters } from "../types";
+
+const getCategoryMatchSlugs = (categorySlug: string): string[] => {
+  const categories = catalogRepository.getCategories();
+
+  if (!categorySlug || categorySlug === "all") {
+    return ["all"];
+  }
+
+  const matchingParent = categories.find((category) => category.slug === categorySlug);
+  if (matchingParent && matchingParent.subcategories?.length) {
+    return [matchingParent.slug, ...matchingParent.subcategories.map((subcategory) => subcategory.slug)];
+  }
+
+  const matchingSubcategory = categories.find((category) => category.subcategories?.some((subcategory) => subcategory.slug === categorySlug));
+  if (matchingSubcategory) {
+    return [categorySlug];
+  }
+
+  return [categorySlug];
+};
 
 export const defaultFilters: ProductFilters = {
   search: "",
@@ -32,7 +53,7 @@ export const applyProductFilters = (products: Product[], filters: ProductFilters
         product.description.toLowerCase().includes(searchNormalized);
 
       const matchesCategory =
-        filters.categorySlug === "all" || product.categorySlug === filters.categorySlug;
+        filters.categorySlug === "all" || getCategoryMatchSlugs(filters.categorySlug).includes(product.categorySlug);
 
       const matchesBrand =
         filters.brandSlug === "all" || product.brandSlug === filters.brandSlug;

@@ -24,11 +24,26 @@ export const FilterBar = ({ filters, categories, brands, onChange }: FilterBarPr
         className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none ring-emerald-300 focus:ring"
       >
         <option value="all">All Categories</option>
-        {categories.map((category) => (
-          <option key={category.id} value={category.slug}>
-            {category.name}
-          </option>
-        ))}
+        {categories.map((category) => {
+          if (category.subcategories?.length) {
+            return (
+              <optgroup key={category.id} label={category.name}>
+                <option value={category.slug}>{category.name}</option>
+                {category.subcategories.map((subcategory) => (
+                  <option key={subcategory.slug} value={subcategory.slug}>
+                    {subcategory.name}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          }
+
+          return (
+            <option key={category.id} value={category.slug}>
+              {category.name}
+            </option>
+          );
+        })}
       </select>
 
       <select

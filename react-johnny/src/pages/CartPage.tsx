@@ -29,41 +29,50 @@ export const CartPage = () => {
       ) : (
         <>
           <section className="space-y-3">
-            {productsInCart.map(({ product, quantity }) => (
-              <article
-                key={product.id}
-                className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[120px_1fr_auto]"
-              >
-                <img src={normalizeImageUrl(product.images[0])} alt={product.name} className="h-24 w-full rounded-xl object-cover" />
-                <div>
-                  <p className="text-lg font-semibold text-slate-900">{product.name}</p>
-                  <p className="text-sm text-slate-600">{product.category}</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCurrencyINR(product.price)}</p>
-                  {typeof product.quantity === "number" ? (
-                    <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.08em] ${product.quantity <= 0 ? "text-rose-600" : "text-slate-500"}`}>
-                      {product.quantity <= 0 ? "No Stocks Available" : `Available: ${product.quantity}`}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    min={1}
-                    max={typeof product.quantity === "number" ? product.quantity : undefined}
-                    value={quantity}
-                    onChange={(event) => updateQuantity(product.id, Number(event.target.value))}
-                    className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeFromCart(product.id)}
-                    className="text-sm font-semibold text-rose-600"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </article>
-            ))}
+            {productsInCart.map(({ product, quantity, variant }) => {
+              const variantId = variant ? String(variant.variant_id ?? `${variant.variant_type}-${variant.variant_value}`) : undefined;
+
+              return (
+                <article
+                  key={`${product.id}-${variantId ?? "base"}`}
+                  className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[120px_1fr_auto]"
+                >
+                  <img src={normalizeImageUrl(product.images[0])} alt={product.name} className="h-24 w-full rounded-xl object-cover" />
+                  <div>
+                    <p className="text-lg font-semibold text-slate-900">{product.name}</p>
+                    <p className="text-sm text-slate-600">{product.category}</p>
+                    {variant ? (
+                      <p className="mt-1 text-sm font-medium text-emerald-700">
+                        {variant.variant_type}: {variant.variant_value}
+                      </p>
+                    ) : null}
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatCurrencyINR(variant?.price_inr ?? product.price)}</p>
+                    {typeof product.quantity === "number" ? (
+                      <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.08em] ${product.quantity <= 0 ? "text-rose-600" : "text-slate-500"}`}>
+                        {product.quantity <= 0 ? "No Stocks Available" : `Available: ${product.quantity}`}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min={1}
+                      max={typeof variant?.stock === "number" ? variant.stock : typeof product.quantity === "number" ? product.quantity : undefined}
+                      value={quantity}
+                      onChange={(event) => updateQuantity(product.id, Number(event.target.value), variantId)}
+                      className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFromCart(product.id, variantId)}
+                      className="text-sm font-semibold text-rose-600"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

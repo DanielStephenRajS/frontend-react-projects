@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { catalogRepository } from "./data/catalog";
 import { RequireAdmin } from "./components/RequireAdmin";
 import { MainLayout } from "./layouts/MainLayout";
 import { AdminLoginPage } from "./pages/AdminLoginPage";
@@ -13,6 +14,35 @@ import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProductDetailsPage } from "./pages/ProductDetailsPage";
 import { ProductsPage } from "./pages/ProductsPage";
 import { YouTubePage } from "./pages/YouTubePage";
+
+const staticImageUrls: string[] = Array.from(
+  new Set(
+    [
+      catalogRepository.getStore().logoUrl,
+      ...catalogRepository.getCategories().flatMap((category) => (category.image ? [category.image] : [])),
+      ...catalogRepository.getBrands().flatMap((brand) =>
+        [brand.logo, brand.bannerImage, brand.bannerFallbackImage].filter(
+          (value): value is string => Boolean(value),
+        ),
+      ),
+      ...catalogRepository.getProducts().flatMap((product) => product.images ?? []),
+      ...catalogRepository.getReviews().flatMap((review) => (review.avatar ? [review.avatar] : [])),
+      "/assets/location/chennai.jpg",
+      "/assets/location/pondicherry.jpg",
+    ].filter((value): value is string => Boolean(value)),
+  ),
+);
+
+const PreloadStaticImages = () => {
+  useEffect(() => {
+    staticImageUrls.forEach((src) => {
+      const image = new Image();
+      image.src = src;
+    });
+  }, []);
+
+  return null;
+};
 
 const ScrollToTop = () => {
   const location = useLocation();
@@ -29,6 +59,7 @@ const ScrollToTop = () => {
 
 const App = () => (
   <>
+    <PreloadStaticImages />
     <ScrollToTop />
     <Routes>
       <Route element={<MainLayout />}>
