@@ -3,6 +3,7 @@ import { catalogRepository } from "../data/catalog";
 
 export const Footer = () => {
   const store = catalogRepository.getStore();
+  const currentYear = new Date().getFullYear();
   const socialLinks = [
     { label: "Instagram", href: "https://www.instagram.com/johnny_fishing_tackle?igsh=ZHAyZGlkaG5idnJ6" },
     { label: "Facebook", href: "https://www.facebook.com/share/18saneJjyT/?mibextid=wwXIfr" },
@@ -61,6 +62,10 @@ export const Footer = () => {
             ))}
           </ul>
         </div>
+      </div>
+
+      <div className="border-t border-slate-700/80 bg-slate-950 px-4 py-3 text-center text-xs text-slate-300 sm:px-6">
+        Powered by Daniel (IT Meenavan) • {currentYear}
       </div>
     </footer>
   );

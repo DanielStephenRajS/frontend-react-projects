@@ -5,7 +5,8 @@ import { ProductCard } from "../components/ProductCard";
 import { useAdmin } from "../hooks/useAdmin";
 import { useCart } from "../hooks/useCart";
 import { useDocumentMeta } from "../hooks/useDocumentMeta";
-import { useProducts } from "../hooks/useProducts";
+import { getProductById, useProducts } from "../hooks/useProducts";
+import type { Product } from "../types";
 import { formatCurrencyINR } from "../utils/format";
 import { normalizeImageUrl } from "../utils/images";
 import { getRelatedProducts } from "../utils/products";
@@ -15,9 +16,52 @@ export const ProductDetailsPage = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { isAdmin } = useAdmin();
-  const { products, isLoading } = useProducts();
+  const { products, isLoading: isListingLoading } = useProducts();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const product = products.find((item) => item.id === productId);
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProduct = async () => {
+      if (!productId) {
+        setProduct(null);
+        setLoadError(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setLoadError(null);
+      setProduct(null);
+
+      try {
+        const detail = await getProductById(productId);
+        if (!isMounted) {
+          return;
+        }
+        setProduct(detail);
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+        setProduct(null);
+        setLoadError("Unable to load product details right now.");
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadProduct();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [productId]);
+
   const normalizedActiveImage = normalizeImageUrl(product?.images[0]);
   const [activeImage, setActiveImage] = useState<string | undefined>(normalizedActiveImage);
   const [quantity, setQuantity] = useState(1);
@@ -80,10 +124,18 @@ export const ProductDetailsPage = () => {
     setZoomStyle(null);
   };
 
-  if (isLoading) {
+  if (isLoading || isListingLoading) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
         Loading product details...
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
+        {loadError}
       </div>
     );
   }

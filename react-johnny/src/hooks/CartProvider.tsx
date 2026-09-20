@@ -3,11 +3,12 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useState,
   type ReactNode,
 } from "react";
 import type { CartItem, Product, ProductVariant } from "../types";
 import { CartContext } from "./cart-context";
-import { useProducts } from "./useProducts";
+import { getProductById, useProducts } from "./useProducts";
 
 interface CartState {
   items: CartItem[];
@@ -84,6 +85,61 @@ const reducer = (state: CartState, action: CartAction): CartState => {
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, { items: [] });
   const { products } = useProducts();
+  const [fetchedProducts, setFetchedProducts] = useState<Record<string, Product>>({});
+
+  useEffect(() => {
+    const missingIds = [...new Set(state.items.map((item) => item.productId))].filter(
+      (productId) => !products.some((product) => product.id === productId) && !fetchedProducts[productId],
+    );
+
+    if (missingIds.length === 0) {
+      return;
+    }
+
+    let isActive = true;
+
+    Promise.all(
+      missingIds.map(async (productId) => {
+        try {
+          const product = await getProductById(productId);
+          return [productId, product] as const;
+        } catch {
+          return [productId, {
+            id: productId,
+            name: `Product ${productId}`,
+            description: "",
+            shortDescription: "",
+            brand: "",
+            brandSlug: "",
+            category: "Unknown",
+            categorySlug: "unknown",
+            price: 0,
+            images: [],
+            featured: false,
+            specifications: {},
+            variants: [],
+          } as Product] as const;
+        }
+      }),
+    )
+      .then((results) => {
+        if (!isActive) {
+          return;
+        }
+
+        setFetchedProducts((current) => ({
+          ...current,
+          ...Object.fromEntries(results),
+        }));
+      })
+      .catch(() => {
+        // ignore fetch failures; cart can still render placeholders
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [products, state.items, fetchedProducts]);
 
   useEffect(() => {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
@@ -106,12 +162,34 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [state.items]);
 
   const addToCart = useCallback(
-    (productId: string, quantity: number = 1, variant?: ProductVariant | null) => {
-      const product = products.find((item) => item.id === productId);
+    async (productId: string, quantity: number = 1, variant?: ProductVariant | null) => {
       const requestedQuantity = Number.isFinite(quantity) ? Math.max(1, Math.floor(quantity)) : 1;
       const variantKey = variant ? String(variant.variant_id ?? `${productId}-${variant.variant_type}-${variant.variant_value}`) : "base";
 
-      if (!product || requestedQuantity <= 0) {
+      let product = products.find((item) => item.id === productId);
+      if (!product) {
+        try {
+          product = await getProductById(productId);
+        } catch {
+          product = {
+            id: productId,
+            name: `Product ${productId}`,
+            description: "",
+            shortDescription: "",
+            brand: "",
+            brandSlug: "",
+            category: "",
+            categorySlug: "",
+            price: 0,
+            images: [],
+            featured: false,
+            specifications: {},
+            variants: [],
+          };
+        }
+      }
+
+      if (requestedQuantity <= 0) {
         return;
       }
 
@@ -158,13 +236,36 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const productsInCart = useMemo(() => {
+    const productMap = new Map<string, Product>();
+
+    for (const product of products) {
+      productMap.set(product.id, product);
+    }
+
+    for (const [productId, product] of Object.entries(fetchedProducts)) {
+      if (!productMap.has(productId)) {
+        productMap.set(productId, product);
+      }
+    }
+
     const entries: Array<{ product: Product; quantity: number; variant?: ProductVariant }> = [];
 
     for (const item of state.items) {
-      const product = products.find((entry) => entry.id === item.productId);
-      if (!product) {
-        continue;
-      }
+      const product = productMap.get(item.productId) ?? {
+        id: item.productId,
+        name: `Product ${item.productId}`,
+        description: "",
+        shortDescription: "",
+        brand: "",
+        brandSlug: "",
+        category: "Unknown",
+        categorySlug: "unknown",
+        price: item.price ?? 0,
+        images: [],
+        featured: false,
+        specifications: {},
+        variants: [],
+      };
 
       const variant = product.variants?.find((entry) =>
         String(entry.variant_id ?? `${entry.variant_type}-${entry.variant_value}`) === (item.variantId ?? "base"),
@@ -178,7 +279,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return entries;
-  }, [state.items, products]);
+  }, [state.items, products, fetchedProducts]);
 
   const itemCount = useMemo(
     () => state.items.reduce((total, item) => total + item.quantity, 0),

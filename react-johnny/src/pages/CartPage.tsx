@@ -13,7 +13,6 @@ export const CartPage = () => {
     <div className="space-y-6">
       <section>
         <h1 className="font-display text-4xl text-slate-900">Your Cart</h1>
-        <p className="mt-1 text-sm text-slate-600">Cart state is persisted in local storage for future checkout integration.</p>
       </section>
 
       {productsInCart.length === 0 ? (
@@ -31,6 +30,11 @@ export const CartPage = () => {
           <section className="space-y-3">
             {productsInCart.map(({ product, quantity, variant }) => {
               const variantId = variant ? String(variant.variant_id ?? `${variant.variant_type}-${variant.variant_value}`) : undefined;
+              const hasVariant = Boolean(variant);
+              const displayedStock = hasVariant
+                ? Number(variant?.stock ?? product.quantity ?? 0)
+                : Number(product.quantity ?? 0);
+              const isOutOfStock = displayedStock <= 0;
 
               return (
                 <article
@@ -47,17 +51,18 @@ export const CartPage = () => {
                       </p>
                     ) : null}
                     <p className="mt-1 text-sm font-semibold text-slate-900">{formatCurrencyINR(variant?.price_inr ?? product.price)}</p>
-                    {typeof product.quantity === "number" ? (
-                      <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.08em] ${product.quantity <= 0 ? "text-rose-600" : "text-slate-500"}`}>
-                        {product.quantity <= 0 ? "No Stocks Available" : `Available: ${product.quantity}`}
-                      </p>
+                    <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.08em] ${isOutOfStock ? "text-rose-600" : "text-emerald-700"}`}>
+                      {isOutOfStock ? "No Stocks Available" : "In Stock"}
+                    </p>
+                    {!isOutOfStock ? (
+                      <p className="mt-1 text-[11px] text-slate-500">Available: {displayedStock}</p>
                     ) : null}
                   </div>
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
                       min={1}
-                      max={typeof variant?.stock === "number" ? variant.stock : typeof product.quantity === "number" ? product.quantity : undefined}
+                      max={displayedStock > 0 ? displayedStock : 1}
                       value={quantity}
                       onChange={(event) => updateQuantity(product.id, Number(event.target.value), variantId)}
                       className="w-20 rounded-lg border border-slate-300 px-2 py-1 text-sm"

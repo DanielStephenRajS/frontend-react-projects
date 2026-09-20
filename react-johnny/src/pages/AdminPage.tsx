@@ -12,6 +12,13 @@ const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "im
 const MAX_IMAGE_DIMENSION = 1280;
 const COMPRESS_QUALITY = 0.72;
 
+const normalizeSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 const buildImageFileName = (productName: string, index: number, extension: string): string => {
   const baseName = (productName || "product")
     .trim()
@@ -165,9 +172,14 @@ export const AdminPage = () => {
     setMessage(`Editing ${editingProduct.name}. Update the fields and save.`);
   }, [brands, categories, editingProduct]);
 
-  const brand = useMemo(() => brands.find((item) => item.slug === brandSlug), [brands, brandSlug]);
+  const brand = useMemo(
+    () => brands.find((item) => normalizeSlug(item.slug) === normalizeSlug(brandSlug)),
+    [brands, brandSlug],
+  );
   const category = useMemo(
-    () => categoryOptions.find((item) => item.slug === categorySlug) ?? categories.find((item) => item.slug === categorySlug),
+    () =>
+      categoryOptions.find((item) => normalizeSlug(item.slug) === normalizeSlug(categorySlug)) ??
+      categories.find((item) => normalizeSlug(item.slug) === normalizeSlug(categorySlug)),
     [categories, categoryOptions, categorySlug],
   );
 

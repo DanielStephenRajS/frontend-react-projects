@@ -6,6 +6,24 @@ import type { Product, ProductVariant } from "../types";
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000").replace(/\/$/, "");
 const PRODUCTS_API_URL = `${API_BASE_URL}/api/products`;
 
+export interface ProductQueryParams {
+  limit?: number;
+  offset?: number;
+  category?: string;
+  brand?: string;
+  search?: string;
+  sortBy?: string;
+}
+
+export interface ProductsApiResponse {
+  products?: ApiProduct[];
+  data?: ApiProduct[];
+  items?: ApiProduct[];
+  has_more?: boolean;
+  hasMore?: boolean;
+  total?: number;
+}
+
 interface ApiProductImage {
   image_url?: string | null;
   image_data?: string | null;
@@ -192,6 +210,82 @@ const normalizeProduct = (item: ApiProduct): Product => {
     quantity: item.stock_quantity ?? undefined,
     variants: parseVariants(item.variants ?? item.product_variants),
   };
+};
+
+const buildProductsQuery = (params: ProductQueryParams = {}) => {
+  const query = new URLSearchParams();
+
+  if (typeof params.limit === "number") query.set("limit", String(params.limit));
+  if (typeof params.offset === "number") query.set("offset", String(params.offset));
+  if (params.category && params.category !== "all") query.set("category", params.category);
+  if (params.brand && params.brand !== "all") query.set("brand", params.brand);
+  if (params.search && params.search.trim()) query.set("search", params.search.trim());
+  if (params.sortBy && params.sortBy !== "name-asc") query.set("sortBy", params.sortBy);
+
+  const queryString = query.toString();
+  return queryString ? `${PRODUCTS_API_URL}?${queryString}` : PRODUCTS_API_URL;
+};
+
+export const getProducts = async (params: ProductQueryParams = {}) => {
+  const response = await fetch(buildProductsQuery(params));
+  if (!response.ok) {
+    throw new Error("Failed to fetch products");
+  }
+
+  const payload = (await response.json()) as ApiProduct[] | ProductsApiResponse | null;
+  const responseList = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.products)
+      ? payload.products
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.items)
+          ? payload.items
+          : [];
+
+  const products = responseList
+    .filter((item): item is ApiProduct => Boolean(item && typeof item === "object"))
+    .filter((item) => item.is_active !== false)
+    .map(normalizeProduct);
+
+  const responseMeta =
+    typeof payload === "object" && payload !== null && !Array.isArray(payload)
+      ? (payload as ProductsApiResponse)
+      : undefined;
+
+  const hasMore =
+    responseMeta && (responseMeta.has_more !== undefined || responseMeta.hasMore !== undefined)
+      ? Boolean(responseMeta.has_more ?? responseMeta.hasMore)
+      : products.length === (params.limit ?? 0);
+
+  return {
+    products,
+    hasMore,
+    total: responseMeta?.total,
+  };
+};
+
+export const getProductById = async (productId: number | string) => {
+  const response = await fetch(`${PRODUCTS_API_URL}/${productId}`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch product details");
+  }
+
+  const payload = (await response.json()) as ApiProduct | { product?: ApiProduct; data?: ApiProduct; item?: ApiProduct } | null;
+  const productRecord = Array.isArray(payload)
+    ? payload[0]
+    : payload && typeof payload === "object" && !("product_id" in payload)
+      ? (payload.product ?? payload.data ?? payload.item ?? null)
+      : payload && typeof payload === "object"
+        ? payload
+        : null;
+
+  if (!productRecord || typeof productRecord !== "object") {
+    throw new Error("Product not found");
+  }
+
+  return normalizeProduct(productRecord as ApiProduct);
 };
 
 export const useProducts = (refreshKey = 0) => {

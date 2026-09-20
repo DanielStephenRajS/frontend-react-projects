@@ -10,7 +10,15 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const { addToCart } = useCart();
-  const outOfStock = typeof product.quantity === "number" && product.quantity <= 0;
+  const activeVariants = (product.variants ?? []).filter((variant) => variant.is_active !== false);
+  const hasVariants = activeVariants.length > 0;
+  const displayedStock = hasVariants
+    ? activeVariants.reduce((maxStock, variant) => Math.max(maxStock, Number(variant.stock ?? 0)), 0)
+    : Number(product.quantity ?? 0);
+  const displayedPrice = hasVariants
+    ? (activeVariants[0]?.price_inr ?? product.price)
+    : product.price;
+  const outOfStock = displayedStock <= 0;
 
   const primaryImage = normalizeImageUrl(product.images[0]);
 
@@ -34,7 +42,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           {outOfStock ? "No Stocks Available" : "In Stock"}
         </p>
         <div className="flex items-center justify-between">
-          <p className="text-lg font-bold text-slate-900">{formatCurrencyINR(product.price)}</p>
+          <p className="text-lg font-bold text-slate-900">{formatCurrencyINR(displayedPrice)}</p>
           <button
             type="button"
             onClick={() => addToCart(product.id)}
