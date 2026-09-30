@@ -1,14 +1,27 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../hooks/useCart";
 import { formatCurrencyINR } from "../utils/format";
 import { normalizeImageUrl } from "../utils/images";
 import type { Product } from "../types";
+
+const getButtonLabel = (hasVariants: boolean, outOfStock: boolean) => {
+  if (hasVariants) {
+    return "Choose Option";
+  }
+
+  if (outOfStock) {
+    return "Out Of Stock";
+  }
+
+  return "Add To Cart";
+};
 
 interface ProductCardProps {
   product: Product;
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+  const navigate = useNavigate();
   const { addToCart } = useCart();
   const activeVariants = (product.variants ?? []).filter((variant) => variant.is_active !== false);
   const hasVariants = activeVariants.length > 0;
@@ -19,6 +32,9 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     ? (activeVariants[0]?.price_inr ?? product.price)
     : product.price;
   const outOfStock = displayedStock <= 0;
+  const buttonLabel = getButtonLabel(hasVariants, outOfStock);
+  const actionButtonClass =
+    "inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300";
 
   const primaryImage = normalizeImageUrl(product.images[0]);
 
@@ -43,14 +59,15 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         </p>
         <div className="flex items-center justify-between">
           <p className="text-lg font-bold text-slate-900">{formatCurrencyINR(displayedPrice)}</p>
-          <button
-            type="button"
-            onClick={() => addToCart(product.id)}
-            disabled={outOfStock}
-            className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-          >
-            {outOfStock ? "Out Of Stock" : "Add To Cart"}
-          </button>
+          {hasVariants ? (
+            <button type="button" onClick={() => navigate(`/products/${product.id}`)} className={actionButtonClass}>
+              {buttonLabel}
+            </button>
+          ) : (
+            <button type="button" onClick={() => addToCart(product.id)} disabled={outOfStock} className={actionButtonClass}>
+              {buttonLabel}
+            </button>
+          )}
         </div>
       </div>
     </article>

@@ -13,6 +13,7 @@ export interface ProductQueryParams {
   brand?: string;
   search?: string;
   sortBy?: string;
+  sort?: string;
 }
 
 export interface ProductsApiResponse {
@@ -220,7 +221,14 @@ const buildProductsQuery = (params: ProductQueryParams = {}) => {
   if (params.category && params.category !== "all") query.set("category", params.category);
   if (params.brand && params.brand !== "all") query.set("brand", params.brand);
   if (params.search && params.search.trim()) query.set("search", params.search.trim());
-  if (params.sortBy && params.sortBy !== "name-asc") query.set("sortBy", params.sortBy);
+
+  const normalizedSort =
+    params.sort ??
+    (params.sortBy === "price-asc" ? "price_asc" : params.sortBy === "price-desc" ? "price_desc" : "name_asc");
+
+  if (normalizedSort) {
+    query.set("sort", normalizedSort);
+  }
 
   const queryString = query.toString();
   return queryString ? `${PRODUCTS_API_URL}?${queryString}` : PRODUCTS_API_URL;

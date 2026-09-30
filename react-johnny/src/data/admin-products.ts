@@ -128,6 +128,17 @@ const parseApiError = async (response: Response): Promise<string> => {
   }
 };
 
+const buildProtectedRequestHeaders = (headers: HeadersInit = {}): HeadersInit => {
+  const token = sessionStorage.getItem("johnny-fishing-admin-token");
+  if (!token) {
+    return headers;
+  }
+
+  const nextHeaders = new Headers(headers);
+  nextHeaders.set("Authorization", `Bearer ${token}`);
+  return nextHeaders;
+};
+
 export const notifyProductsRefresh = (): void => {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("johnny-products-refresh"));
@@ -138,6 +149,7 @@ export const createProduct = async (payload: ProductApiPayload): Promise<unknown
   const response = await fetch(PRODUCTS_API_URL, {
     method: "POST",
     body: buildProductFormData(payload),
+    headers: buildProtectedRequestHeaders(),
     credentials: "include",
   });
 
@@ -155,6 +167,7 @@ export const updateProduct = async (productId: number | string, payload: Product
   const response = await fetch(`${PRODUCTS_API_URL}/${productId}`, {
     method: "PUT",
     body: buildProductFormData(payload),
+    headers: buildProtectedRequestHeaders(),
     credentials: "include",
   });
 
@@ -171,6 +184,7 @@ export const updateProduct = async (productId: number | string, payload: Product
 export const deleteProduct = async (productId: number | string): Promise<void> => {
   const response = await fetch(`${PRODUCTS_API_URL}/${productId}`, {
     method: "DELETE",
+    headers: buildProtectedRequestHeaders(),
     credentials: "include",
   });
 

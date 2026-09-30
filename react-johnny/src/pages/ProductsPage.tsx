@@ -59,6 +59,13 @@ export const ProductsPage = () => {
       setIsLoadingMore(true);
     }
 
+    const backendSort =
+      nextFilters.sortBy === "price-asc"
+        ? "price_asc"
+        : nextFilters.sortBy === "price-desc"
+          ? "price_desc"
+          : "name_asc";
+
     try {
       const response = await getProducts({
         limit: PAGE_SIZE,
@@ -66,7 +73,7 @@ export const ProductsPage = () => {
         category: nextFilters.categorySlug !== "all" ? nextFilters.categorySlug : undefined,
         brand: nextFilters.brandSlug !== "all" ? nextFilters.brandSlug : undefined,
         search: nextFilters.search.trim() || undefined,
-        sortBy: nextFilters.sortBy,
+        sort: backendSort,
       });
 
       if (currentRequestId !== requestIdRef.current) {
