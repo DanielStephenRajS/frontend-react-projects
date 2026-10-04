@@ -223,6 +223,35 @@ const writePhoneCartMap = (nextMap: Record<string, CartItem[]>) => {
   localStorage.setItem(CARTS_BY_PHONE_STORAGE_KEY, JSON.stringify(nextMap));
 };
 
+const getCartItemKey = (item: CartItem): string => `${item.productId}::${item.variantId ?? "base"}`;
+
+const preserveExistingCartOrder = (previousItems: CartItem[], refreshedItems: CartItem[]): CartItem[] => {
+  if (previousItems.length === 0) {
+    return refreshedItems;
+  }
+
+  const previousOrder = new Map(previousItems.map((item, index) => [getCartItemKey(item), index]));
+
+  return [...refreshedItems].sort((left, right) => {
+    const leftIndex = previousOrder.get(getCartItemKey(left));
+    const rightIndex = previousOrder.get(getCartItemKey(right));
+
+    if (leftIndex == null && rightIndex == null) {
+      return 0;
+    }
+
+    if (leftIndex == null) {
+      return 1;
+    }
+
+    if (rightIndex == null) {
+      return -1;
+    }
+
+    return leftIndex - rightIndex;
+  });
+};
+
 const savePhoneCart = (phoneNumber: string, items: CartItem[]) => {
   if (!phoneNumber) {
     return;
@@ -416,7 +445,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       void addCartItemToApi(currentPhone, productId, requestedQuantity, variant).then(async (apiAdded) => {
         if (apiAdded) {
           const refreshedItems = await refreshCartFromApi(currentPhone);
-          savePhoneCart(currentPhone, refreshedItems);
+          const orderedItems = preserveExistingCartOrder(state.items, refreshedItems);
+          dispatch({ type: "hydrate", items: orderedItems });
+          savePhoneCart(currentPhone, orderedItems);
         }
       });
 
@@ -434,7 +465,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       void removeCartItemFromApi(currentPhone, productId, variantId).then(async (ok) => {
         if (ok) {
           const refreshedItems = await refreshCartFromApi(currentPhone);
-          savePhoneCart(currentPhone, refreshedItems);
+          const orderedItems = preserveExistingCartOrder(state.items, refreshedItems);
+          dispatch({ type: "hydrate", items: orderedItems });
+          savePhoneCart(currentPhone, orderedItems);
         }
       });
       return;
@@ -461,7 +494,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     void updateCartItemQuantityInApi(currentPhone, productId, sanitizedQuantity, variantId).then(async (ok) => {
       if (ok) {
         const refreshedItems = await refreshCartFromApi(currentPhone);
-        savePhoneCart(currentPhone, refreshedItems);
+        const orderedItems = preserveExistingCartOrder(state.items, refreshedItems);
+        dispatch({ type: "hydrate", items: orderedItems });
+        savePhoneCart(currentPhone, orderedItems);
       }
     });
   }, [refreshCartFromApi, state.items]);
@@ -492,9 +527,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     const finalizeCart = async () => {
       const fetchedItems = await refreshCartFromApi(normalizedPhone);
-      dispatch({ type: "hydrate", items: fetchedItems });
-      savePhoneCart(normalizedPhone, fetchedItems);
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(fetchedItems));
+      const orderedItems = preserveExistingCartOrder(state.items, fetchedItems);
+      dispatch({ type: "hydrate", items: orderedItems });
+      savePhoneCart(normalizedPhone, orderedItems);
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(orderedItems));
       setPhoneInput("");
       setPhoneError("");
       setIsPhonePromptOpen(false);
