@@ -86,19 +86,15 @@ const fetchCartForPhone = async (phoneNumber: string): Promise<CartItem[]> => {
     });
 
     if (!response.ok) {
-      return getPhoneCart(phoneNumber);
+      return [];
     }
 
     const payload = await response.json();
     const items = normalizeCartResponse(payload);
-    if (items.length > 0) {
-      savePhoneCart(phoneNumber, items);
-      return items;
-    }
-
-    return getPhoneCart(phoneNumber);
+    savePhoneCart(phoneNumber, items);
+    return items;
   } catch {
-    return getPhoneCart(phoneNumber);
+    return [];
   }
 };
 
@@ -227,16 +223,6 @@ const writePhoneCartMap = (nextMap: Record<string, CartItem[]>) => {
   localStorage.setItem(CARTS_BY_PHONE_STORAGE_KEY, JSON.stringify(nextMap));
 };
 
-const getPhoneCart = (phoneNumber: string): CartItem[] => {
-  if (!phoneNumber) {
-    return [];
-  }
-
-  const cartMap = readPhoneCartMap();
-  const cart = cartMap[phoneNumber];
-  return Array.isArray(cart) ? cart : [];
-};
-
 const savePhoneCart = (phoneNumber: string, items: CartItem[]) => {
   if (!phoneNumber) {
     return;
@@ -245,37 +231,6 @@ const savePhoneCart = (phoneNumber: string, items: CartItem[]) => {
   const nextMap = readPhoneCartMap();
   nextMap[phoneNumber] = items;
   writePhoneCartMap(nextMap);
-};
-
-const getCartWithAddedItem = (
-  baseItems: CartItem[],
-  productId: string,
-  quantity: number,
-  variant?: ProductVariant | null,
-): CartItem[] => {
-  const requestedQuantity = Number.isFinite(quantity) ? Math.max(1, Math.floor(quantity)) : 1;
-  const variantKey = variant ? String(variant.variant_id ?? `${productId}-${variant.variant_type}-${variant.variant_value}`) : "base";
-  const existing = baseItems.find((item) => item.productId === productId && (item.variantId ?? "base") === variantKey);
-
-  if (existing) {
-    return baseItems.map((item) =>
-      item.productId === productId && (item.variantId ?? "base") === variantKey
-        ? { ...item, quantity: item.quantity + requestedQuantity }
-        : item,
-    );
-  }
-
-  return [
-    ...baseItems,
-    {
-      productId,
-      quantity: requestedQuantity,
-      variantId: variantKey === "base" ? undefined : variantKey,
-      variantType: variant?.variant_type,
-      variantValue: variant?.variant_value,
-      price: variant?.price_inr ?? undefined,
-    },
-  ];
 };
 
 const reducer = (state: CartState, action: CartAction): CartState => {
@@ -352,26 +307,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [phoneError, setPhoneError] = useState("");
   const pendingCartAddRef = useRef<{ productId: string; quantity: number; variant?: ProductVariant | null } | null>(null);
 
-  useEffect(() => {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw) as CartItem[];
-        if (Array.isArray(parsed)) {
-          dispatch({ type: "hydrate", items: parsed });
-        }
-      } catch {
-        localStorage.removeItem(CART_STORAGE_KEY);
-      }
-    }
+  const refreshCartFromApi = useCallback(async (phoneNumber: string) => {
+    const items = await fetchCartForPhone(phoneNumber);
+    dispatch({ type: "hydrate", items });
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    return items;
+  }, []);
 
+  useEffect(() => {
     const currentPhone = getCurrentPhoneNumber();
     if (currentPhone) {
-      void fetchCartForPhone(currentPhone).then((items) => {
-        dispatch({ type: "hydrate", items });
-      });
+      void refreshCartFromApi(currentPhone);
     }
-  }, []);
+  }, [refreshCartFromApi]);
 
   useEffect(() => {
     const currentPhone = getCurrentPhoneNumber();
@@ -465,16 +413,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      void addCartItemToApi(currentPhone, productId, requestedQuantity, variant).then((apiAdded) => {
-        const nextItems = getCartWithAddedItem(state.items, productId, requestedQuantity, variant);
-        dispatch({ type: "hydrate", items: nextItems });
-        savePhoneCart(currentPhone, nextItems);
-
+      void addCartItemToApi(currentPhone, productId, requestedQuantity, variant).then(async (apiAdded) => {
         if (apiAdded) {
-          void fetchCartForPhone(currentPhone).then((fetchedItems) => {
-            dispatch({ type: "hydrate", items: fetchedItems });
-            savePhoneCart(currentPhone, fetchedItems);
-          });
+          const refreshedItems = await refreshCartFromApi(currentPhone);
+          savePhoneCart(currentPhone, refreshedItems);
         }
       });
 
@@ -482,48 +424,47 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         window.dispatchEvent(new CustomEvent("cart:add", { detail: { productId, quantity: requestedQuantity } }));
       }
     },
-    [products, state.items],
+    [products, refreshCartFromApi, state.items],
   );
 
   const removeFromCart = useCallback((productId: string, variantId?: string) => {
     const currentPhone = getCurrentPhoneNumber();
-    const nextItems = state.items.filter((item) => !(item.productId === productId && (item.variantId ?? "base") === (variantId ?? "base")));
-    dispatch({ type: "hydrate", items: nextItems });
 
     if (currentPhone) {
-      void removeCartItemFromApi(currentPhone, productId, variantId).then((ok) => {
+      void removeCartItemFromApi(currentPhone, productId, variantId).then(async (ok) => {
         if (ok) {
-          void fetchCartForPhone(currentPhone).then((fetchedItems) => {
-            dispatch({ type: "hydrate", items: fetchedItems });
-            savePhoneCart(currentPhone, fetchedItems);
-          });
-        } else {
-          savePhoneCart(currentPhone, nextItems);
+          const refreshedItems = await refreshCartFromApi(currentPhone);
+          savePhoneCart(currentPhone, refreshedItems);
         }
       });
+      return;
     }
-  }, [state.items]);
+
+    const nextItems = state.items.filter((item) => !(item.productId === productId && (item.variantId ?? "base") === (variantId ?? "base")));
+    dispatch({ type: "hydrate", items: nextItems });
+  }, [refreshCartFromApi, state.items]);
 
   const updateQuantity = useCallback((productId: string, quantity: number, variantId?: string) => {
     const currentPhone = getCurrentPhoneNumber();
     const sanitizedQuantity = Number.isFinite(quantity) ? Math.max(1, Math.floor(quantity)) : 1;
-    const nextItems = state.items.map((item) =>
-      item.productId === productId && (item.variantId ?? "base") === (variantId ?? "base")
-        ? { ...item, quantity: sanitizedQuantity }
-        : item,
-    );
 
-    dispatch({ type: "hydrate", items: nextItems });
-
-    if (currentPhone) {
-      savePhoneCart(currentPhone, nextItems);
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextItems));
-
-      void updateCartItemQuantityInApi(currentPhone, productId, sanitizedQuantity, variantId).catch(() => {
-        // keep the updated local cart order stable; API failures do not reorder the cart list
-      });
+    if (!currentPhone) {
+      const nextItems = state.items.map((item) =>
+        item.productId === productId && (item.variantId ?? "base") === (variantId ?? "base")
+          ? { ...item, quantity: sanitizedQuantity }
+          : item,
+      );
+      dispatch({ type: "hydrate", items: nextItems });
+      return;
     }
-  }, [state.items]);
+
+    void updateCartItemQuantityInApi(currentPhone, productId, sanitizedQuantity, variantId).then(async (ok) => {
+      if (ok) {
+        const refreshedItems = await refreshCartFromApi(currentPhone);
+        savePhoneCart(currentPhone, refreshedItems);
+      }
+    });
+  }, [refreshCartFromApi, state.items]);
 
   const clearCart = useCallback(() => {
     const currentPhone = getCurrentPhoneNumber();
@@ -547,15 +488,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const normalizedPhone = formatPhoneNumber(digits);
     sessionStorage.setItem(WHATSAPP_PHONE_KEY, normalizedPhone);
 
-    void fetchCartForPhone(normalizedPhone).then((existingCart) => {
-      const pendingAdd = pendingCartAddRef.current;
-      const nextItems = pendingAdd
-        ? getCartWithAddedItem(existingCart, pendingAdd.productId, pendingAdd.quantity, pendingAdd.variant)
-        : existingCart;
+    const pendingAdd = pendingCartAddRef.current;
 
-      dispatch({ type: "hydrate", items: nextItems });
-      savePhoneCart(normalizedPhone, nextItems);
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(nextItems));
+    const finalizeCart = async () => {
+      const fetchedItems = await refreshCartFromApi(normalizedPhone);
+      dispatch({ type: "hydrate", items: fetchedItems });
+      savePhoneCart(normalizedPhone, fetchedItems);
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(fetchedItems));
       setPhoneInput("");
       setPhoneError("");
       setIsPhonePromptOpen(false);
@@ -564,8 +503,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (pendingAdd && typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("cart:add", { detail: { productId: pendingAdd.productId, quantity: pendingAdd.quantity } }));
       }
-    });
-  }, [phoneInput]);
+    };
+
+    if (pendingAdd) {
+      void addCartItemToApi(normalizedPhone, pendingAdd.productId, pendingAdd.quantity, pendingAdd.variant).then(() => {
+        void finalizeCart();
+      });
+      return;
+    }
+
+    void finalizeCart();
+  }, [phoneInput, refreshCartFromApi]);
 
   const productsInCart = useMemo(() => {
     const productMap = new Map<string, Product>();

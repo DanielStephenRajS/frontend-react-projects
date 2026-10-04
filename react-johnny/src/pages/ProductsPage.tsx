@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 import { FilterBar } from "../components/FilterBar";
@@ -9,7 +9,20 @@ import { getProducts } from "../hooks/useProducts";
 import type { Product, ProductFilters } from "../types";
 import { defaultFilters } from "../utils/products";
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
+
+const dedupeProductsById = (items: Product[]) => {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    if (seen.has(item.id)) {
+      return false;
+    }
+
+    seen.add(item.id);
+    return true;
+  });
+};
 
 export const ProductsPage = () => {
   const { categorySlug } = useParams();
@@ -18,13 +31,15 @@ export const ProductsPage = () => {
   const categories = catalogRepository.getCategories();
   const brands = catalogRepository.getBrands();
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const requestIdRef = useRef(0);
-  const inFlightOffsetsRef = useRef(new Set<number>());
+  const observerRef = useRef<IntersectionObserver | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [offset, setOffset] = useState(0);
+  const offsetRef = useRef(0);
   const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
+  const hasMoreRef = useRef(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const requestVersionRef = useRef(0);
 
   const [filters, setFilters] = useState<ProductFilters>({
     ...defaultFilters,
@@ -41,107 +56,125 @@ export const ProductsPage = () => {
     [filters, categorySlug, brandFromQuery],
   );
 
-  const loadProductsPage = async (nextOffset: number, resetList: boolean, nextFilters: ProductFilters) => {
-    if (inFlightOffsetsRef.current.has(nextOffset)) {
-      return;
-    }
-
-    inFlightOffsetsRef.current.add(nextOffset);
-    const currentRequestId = ++requestIdRef.current;
-
-    if (resetList) {
-      setProducts([]);
-      setOffset(0);
-      setHasMore(true);
-      setIsLoading(true);
-      setIsLoadingMore(false);
-    } else {
-      setIsLoadingMore(true);
-    }
-
-    const backendSort =
-      nextFilters.sortBy === "price-asc"
-        ? "price_asc"
-        : nextFilters.sortBy === "price-desc"
-          ? "price_desc"
-          : "name_asc";
-
-    try {
-      const response = await getProducts({
-        limit: PAGE_SIZE,
-        offset: nextOffset,
-        category: nextFilters.categorySlug !== "all" ? nextFilters.categorySlug : undefined,
-        brand: nextFilters.brandSlug !== "all" ? nextFilters.brandSlug : undefined,
-        search: nextFilters.search.trim() || undefined,
-        sort: backendSort,
-      });
-
-      if (currentRequestId !== requestIdRef.current) {
+  const loadProductsPage = useCallback(
+    async (requestedOffset: number, resetList: boolean, nextFilters: ProductFilters) => {
+      if (!resetList && !hasMoreRef.current) {
         return;
       }
 
-      const nextProducts = response.products ?? [];
-      setProducts((currentProducts) => {
-        if (resetList) {
-          return nextProducts;
+      const requestVersion = ++requestVersionRef.current;
+      setIsLoading(true);
+
+      if (resetList) {
+        setProducts([]);
+        setOffset(0);
+        offsetRef.current = 0;
+        setHasMore(true);
+        hasMoreRef.current = true;
+        setIsLoadingMore(false);
+      } else {
+        setIsLoadingMore(true);
+      }
+
+      const backendSort =
+        nextFilters.sortBy === "price-asc"
+          ? "price_asc"
+          : nextFilters.sortBy === "price-desc"
+            ? "price_desc"
+            : "name_asc";
+
+      try {
+        const response = await getProducts({
+          limit: PAGE_SIZE,
+          offset: requestedOffset,
+          category: nextFilters.categorySlug !== "all" ? nextFilters.categorySlug : undefined,
+          brand: nextFilters.brandSlug !== "all" ? nextFilters.brandSlug : undefined,
+          search: nextFilters.search.trim() || undefined,
+          sort: backendSort,
+        });
+
+        if (requestVersion !== requestVersionRef.current) {
+          return;
         }
 
-        const existingIds = new Set(currentProducts.map((item) => item.id));
-        return [...currentProducts, ...nextProducts.filter((item) => !existingIds.has(item.id))];
-      });
+        const newProducts = dedupeProductsById(response.products ?? []);
 
-      setOffset(nextOffset + nextProducts.length);
-      setHasMore(
-        typeof response.hasMore === "boolean"
-          ? response.hasMore
-          : nextProducts.length === PAGE_SIZE,
-      );
-    } catch {
-      if (currentRequestId === requestIdRef.current) {
-        setHasMore(false);
+        setProducts((currentProducts) => {
+          const existingIds = new Set(currentProducts.map((item) => item.id));
+          const uniqueNewProducts = newProducts.filter((product) => !existingIds.has(product.id));
+          const mergedProducts = resetList ? newProducts : [...currentProducts, ...uniqueNewProducts];
+          const nextOffset = mergedProducts.length;
+
+          setOffset(nextOffset);
+          offsetRef.current = nextOffset;
+
+          const nextHasMore = Boolean(response.hasMore);
+          setHasMore(nextHasMore);
+          hasMoreRef.current = nextHasMore;
+
+          return mergedProducts;
+        });
+      } catch {
+        if (requestVersion === requestVersionRef.current) {
+          setHasMore(false);
+          hasMoreRef.current = false;
+        }
+      } finally {
+        if (requestVersion === requestVersionRef.current) {
+          setIsLoading(false);
+          setIsLoadingMore(false);
+        }
       }
-    } finally {
-      if (currentRequestId === requestIdRef.current) {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      }
-      inFlightOffsetsRef.current.delete(nextOffset);
-    }
-  };
+    },
+    [],
+  );
 
   useEffect(() => {
-    requestIdRef.current += 1;
-    inFlightOffsetsRef.current.clear();
+    setProducts([]);
+    setOffset(0);
+    offsetRef.current = 0;
+    setHasMore(true);
+    hasMoreRef.current = true;
     void loadProductsPage(0, true, activeFilters);
-  }, [categorySlug, brandFromQuery]);
+  }, [categorySlug, brandFromQuery, filters.categorySlug, filters.brandSlug, filters.sortBy, filters.search, loadProductsPage, activeFilters]);
+
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
 
   useEffect(() => {
     const node = sentinelRef.current;
-    if (!node || isLoading || isLoadingMore || !hasMore) {
+    if (!node || isLoading || !hasMoreRef.current) {
       return;
+    }
+
+    if (observerRef.current) {
+      observerRef.current.disconnect();
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          void loadProductsPage(offset, false, activeFilters);
+        if (entries[0]?.isIntersecting && !isLoading && hasMoreRef.current) {
+          const nextOffset = offsetRef.current;
+          void loadProductsPage(nextOffset, false, activeFilters);
         }
       },
-      { rootMargin: "200px" },
+      { rootMargin: "260px 0px" },
     );
 
+    observerRef.current = observer;
     observer.observe(node);
-    return () => observer.disconnect();
-  }, [offset, hasMore, isLoading, isLoadingMore, activeFilters]);
+
+    return () => {
+      observer.disconnect();
+      if (observerRef.current === observer) {
+        observerRef.current = null;
+      }
+    };
+  }, [offset, hasMore, isLoading, activeFilters, loadProductsPage]);
 
   const handleFiltersChange = (nextFilters: ProductFilters) => {
-    requestIdRef.current += 1;
-    inFlightOffsetsRef.current.clear();
     setFilters(nextFilters);
-    setProducts([]);
-    setOffset(0);
-    setHasMore(true);
-    void loadProductsPage(0, true, nextFilters);
   };
 
   useDocumentMeta("Products", "Browse rods, reels, lures, accessories, and more from Johnny Fishing Tackle.");
